@@ -24,13 +24,13 @@ colormap = {
     "06": "BLUE",
     "07": "YELLOW",
     "08": "ORANGE",
-    "09": "LTORANGE",
-    "0A": "PINK",
-    "0B": "LTCYAN",
-    "0C": "LTPURPLE",
+    "09": "BROWN",
+    "0A": "LTRED",
+    "0B": "GRAY1",
+    "0C": "GRAY2",
     "0D": "LTGREEN",
     "0E": "LTBLUE",
-    "0F": "LTYELLOW",
+    "0F": "GRAY3",
     }
 
 p = ""

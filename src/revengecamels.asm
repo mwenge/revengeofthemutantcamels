@@ -6,10 +6,10 @@ f20 = $20
 ;
 ; **** ZP ABSOLUTE ADRESSES **** 
 ;
-a02 = $02
-a03 = $03
-a04 = $04
-a05 = $05
+screenPtrXPos = $02
+screenPtrYPPos = $03
+charToDraw = $04
+colorToDraw = $05
 a06 = $06
 a07 = $07
 a08 = $08
@@ -65,8 +65,8 @@ a44 = $44
 a45 = $45
 a46 = $46
 a47 = $47
-a48 = $48
-a49 = $49
+zpLo = $48
+zpHi = $49
 a4A = $4A
 a4B = $4B
 a4C = $4C
@@ -104,70 +104,26 @@ p15 = $15
 p2B = $2B
 p3E = $3E
 p40 = $40
-p48 = $48
 p5C = $5C
 p60 = $60
 ;
 ; **** FIELDS **** 
 ;
-f0340 = $0340
-f0360 = $0360
-f03FF = $03FF
-f0400 = $0400
-f040D = $040D
-f0428 = $0428
-f043C = $043C
-f0500 = $0500
-f058F = $058F
-f0590 = $0590
-f05AE = $05AE
-f05B2 = $05B2
-f0600 = $0600
-f062F = $062F
-f0630 = $0630
-f0657 = $0657
-f0658 = $0658
-f067F = $067F
-f0680 = $0680
-f06A7 = $06A7
-f06A8 = $06A8
-f06CF = $06CF
-f06D0 = $06D0
-f06F7 = $06F7
-f06F8 = $06F8
-f0700 = $0700
-f071F = $071F
-f07F7 = $07F7
-fD7FF = $D7FF
-fD827 = $D827
-fD98F = $D98F
-fD990 = $D990
-fDA2F = $DA2F
-fDA30 = $DA30
-fDA57 = $DA57
-fDA58 = $DA58
-fDA7F = $DA7F
-fDA80 = $DA80
-fDAA7 = $DAA7
-fDAA8 = $DAA8
-fDACF = $DACF
-fDAD0 = $DAD0
-fDAF7 = $DAF7
-fDAF8 = $DAF8
-fDB1F = $DB1F
+SCREEN_PRT_LO = $0340
+SCREEN_PTR_HI = $0360
+startOfScreenRAM = $03FF
+SCREEN_RAM = $0400
+startOfColorRAM = $D7FF
+COLOR_RAM = $D800
+JOYSTICK1 = $DC00
 ;
 ; **** ABSOLUTE ADRESSES **** 
 ;
-a0291 = $0291
-a0314 = $0314
-a0315 = $0315
-a0318 = $0318
-a0319 = $0319
-a0421 = $0421
-a0422 = $0422
-a05AD = $05AD
-a05B0 = $05B0
-a05B1 = $05B1
+a021 = $0291
+a034 = $0314
+a035 = $0315
+a038 = $0318
+a039 = $0319
 aCFCF = $CFCF
 ;
 ; **** POINTERS **** 
@@ -180,20 +136,21 @@ p0200 = $0200
 p0307 = $0307
 p030F = $030F
 p0312 = $0312
-p0609 = $0609
-p0618 = $0618
-p0701 = $0701
 p0800 = $0800
 pC820 = $C820
 ;
 ; **** EXTERNAL JUMPS **** 
 ;
-eEA31 = $EA31
+kernelInterrupt = $EA31
 
         * = $0801
 
-        .BYTE $0C,$08,$0A,$00,$9E,$33,$34,$38
-        .BYTE $30,$30,$00,$00,$00
+;------------------------------------------------
+; SYS 34800 (LaunchGame $87F0) (Launch)
+; Jumps to LaunchGame
+;------------------------------------------------
+        .BYTE $0C,$08,$0A,$00,$9E,$33,$34,$38,$30,$30,$00,$00,$00
+
 p080E   .BYTE $31,$A7,$93,$22,$43,$43,$48,$41
         .BYTE $52,$53,$22,$2C,$38,$2C,$31,$00
         .BYTE $35,$08,$14,$00,$8B,$43,$B2,$32
@@ -464,23 +421,27 @@ b5000   DEY
         BNE b5000
         RTS 
 
-s5007   LDX a02
+;-------------------------------
+; s5007
+;-------------------------------
+s5007   
+        LDX screenPtrXPos
         LDA f502F,X
-        STA a02
+        STA screenPtrXPos
         LDA f5030,X
-        STA a03
+        STA screenPtrYPPos
         LDA #<p0800
-        STA a04
+        STA charToDraw
         LDA #>p0800
-        STA a05
+        STA colorToDraw
 b501B   LDY #$00
 b501D   LDA (p02),Y
         STA (p04),Y
         INY 
         BNE b501D
-        INC a03
-        INC a05
-        LDA a05
+        INC screenPtrYPPos
+        INC colorToDraw
+        LDA colorToDraw
         CMP #$10
         BNE b501B
         RTS 
@@ -488,7 +449,12 @@ b501D   LDA (p02),Y
 f502F   .BYTE $00
 f5030   .BYTE $10,$00,$18,$00,$40,$00,$48,$00
         .BYTE $50,$00,$58
-j503B   LDA a3B
+
+;-------------------------------
+; j503B
+;-------------------------------
+j503B   
+        LDA a3B
         PHA 
         EOR #$FF
         STA a3B
@@ -497,7 +463,11 @@ j503B   LDA a3B
         STA a3B
         RTS 
 
-j5049   LDA f1E40,X
+;-------------------------------
+; j5049
+;-------------------------------
+j5049   
+        LDA f1E40,X
         CMP f1E40
         BMI b505F
         LDA f1E70,X
@@ -510,7 +480,11 @@ b505F   LDA f1E70,X
         AND #$7F
         STA f1E70,X
         STA f1D60,X
-j506A   LDA f1E50,X
+;-------------------------------
+; j506A
+;-------------------------------
+j506A   
+        LDA f1E50,X
         CMP f1E50
         BMI b507E
         LDA f1E80,X
@@ -527,7 +501,11 @@ b507E   LDA f1E80,X
 
 b508A   RTS 
 
-s508B   LDA a55
+;-------------------------------
+; s508B
+;-------------------------------
+s508B   
+        LDA a55
         CMP #$01
         BEQ b508A
         LDA #$00
@@ -569,32 +547,36 @@ b50D0   LDA #$00
         STA $D021    ;Background Color 0
         RTS 
 
-s50D9   JSR s9406
+;-------------------------------
+; s50D9
+;-------------------------------
+s50D9   
+        JSR s9406
         LDA #$C0
         STA f1E40
         LDX #$00
 b50E3   LDA f511B,X
-        STA f0590,X
+        STA SCREEN_RAM + $0190,X
         LDA #$01
-        STA fD990,X
+        STA COLOR_RAM + $0190,X
         INX 
         CPX #$28
         BNE b50E3
         LDA #$30
         CLC 
         ADC a54
-        STA a05AD
+        STA SCREEN_RAM + $01AD
         CMP #$30
         BNE b5102
         JSR s53EC
 b5102   LDA #$0A
-        STA a02
+        STA screenPtrXPos
         LDX #$A0
 b5108   DEY 
         BNE b5108
         DEX 
         BNE b5108
-        DEC a02
+        DEC screenPtrXPos
         BNE b5108
         LDA #$0A
         STA $D405    ;Voice 1: Attack / Decay Cycle Control
@@ -606,7 +588,11 @@ f511B   .BYTE $20,$20,$20,$20,$20,$20,$20,$20
         .BYTE $13,$20,$12,$05,$0D,$01,$09,$0E
         .BYTE $09,$0E,$07,$56,$20,$30,$20,$20
         .BYTE $20,$20,$20,$20,$20,$20,$20,$20
-s5143   LDA #$00
+;-------------------------------
+; s5143
+;-------------------------------
+s5143   
+        LDA #$00
         STA $D404    ;Voice 1: Control Register
         STA $D40B    ;Voice 2: Control Register
         STA $D412    ;Voice 3: Control Register
@@ -616,9 +602,9 @@ s5143   LDA #$00
         JSR s9406
         LDX #$00
 b515B   LDA f5199,X
-        STA f058F,X
+        STA SCREEN_RAM + $018F,X
         LDA #$01
-        STA fD98F,X
+        STA COLOR_RAM + $018F,X
         INX 
         CPX #$28
         BNE b515B
@@ -627,7 +613,7 @@ b515B   LDA f5199,X
         BNE b517C
         LDX #$03
 b5173   LDA f51C0,X
-        STA f05AE,X
+        STA SCREEN_RAM + $01AE,X
         DEX 
         BNE b5173
 b517C   LDA #$02
@@ -648,77 +634,89 @@ f5199   .BYTE $20,$20,$20,$20,$13,$14,$01,$0E
         .BYTE $20,$10,$0C,$01,$19,$05,$12,$20
         .BYTE $0F,$0E,$05,$20,$20,$20,$20
 f51C0   .BYTE $20,$14,$17,$0F
-s51C4   LDA #>p0200
-        STA a03
+;-------------------------------
+; s51C4
+;-------------------------------
+s51C4   
+        LDA #>p0200
+        STA screenPtrYPPos
 b51C8   LDA #<p0200
-        STA a02
+        STA screenPtrXPos
 b51CC   LDA #>p0120
-        STA a05
+        STA colorToDraw
         LDA #<p0120
-        STA a04
-        JSR s883A
-        INC a02
-        LDA a02
+        STA charToDraw
+        JSR DrawCharacter
+        INC screenPtrXPos
+        LDA screenPtrXPos
         CMP #$28
         BNE b51CC
-        INC a03
-        LDA a03
+        INC screenPtrYPPos
+        LDA screenPtrYPPos
         CMP #$0C
         BNE b51C8
         RTS 
 
-j51E8   JSR s51C4
-j51EB   LDX #$00
+;-------------------------------
+; j51E8
+;-------------------------------
+j51E8   
+        JSR s51C4
+;-------------------------------
+; j51EB
+;-------------------------------
+j51EB   
+        LDX #$00
         LDA #>p030F
-        STA a03
+        STA screenPtrYPPos
         LDA #<p030F
-        STA a02
+        STA screenPtrXPos
         LDA #$03
-        STA a05
+        STA colorToDraw
 b51F9   LDA f52C2,X
-        STA a04
-        JSR s883A
-        INC a02
+        STA charToDraw
+        JSR DrawCharacter
+        INC screenPtrXPos
         INX 
         CPX #$07
         BNE b51F9
-        LDA #>p0609
-        STA a03
-        LDA #<p0609
-        STA a02
+        LDA #>SCREEN_RAM + $0209
+        STA screenPtrYPPos
+        LDA #<SCREEN_RAM + $0209
+        STA screenPtrXPos
         LDX #$00
         LDA #$01
-        STA a05
+        STA colorToDraw
 b5216   LDA f52C9,X
-        STA a04
-        JSR s883A
-        INC a02
+        STA charToDraw
+        JSR DrawCharacter
+        INC screenPtrXPos
         INX 
         CPX #$15
         BNE b5216
         LDA #>p080E
-        STA a03
+        STA screenPtrYPPos
         LDA #<p080E
-        STA a02
+        STA screenPtrXPos
         LDX #$00
 b522F   LDA f52DE,X
-        STA a04
-        JSR s883A
-        INC a02
+        STA charToDraw
+        JSR DrawCharacter
+        INC screenPtrXPos
         INX 
         CPX #$0A
         BNE b522F
         LDA a59
         BEQ b525B
-        LDA #<p0618
-        STA a02
-        LDA #>p0618
-        STA a03
+        LDA #<SCREEN_RAM + $0218
+        STA screenPtrXPos
+        LDA #>SCREEN_RAM + $0218
+        STA screenPtrYPPos
         LDX #$00
 b524C   LDA f52E8,X
-        STA a04
-        JSR s883A
-        INC a02
+        STA charToDraw
+        JSR DrawCharacter
+        INC screenPtrXPos
         INX 
         CPX #$06
         BNE b524C
@@ -726,12 +724,12 @@ b525B   JSR s5300
         LDA a56
         BEQ b5271
         LDA #>p3208
-        STA a04
+        STA charToDraw
         LDA #<p3208
-        STA a03
+        STA screenPtrYPPos
         LDA #$17
-        STA a02
-        JSR s883A
+        STA screenPtrXPos
+        JSR DrawCharacter
 b5271   LDA aC5
         CMP #$04
         BNE b5283
@@ -770,7 +768,11 @@ b52AC   CMP #$03
         PLA 
         JMP j8AEA
 
-s52BB   LDA aC5
+;-------------------------------
+; s52BB
+;-------------------------------
+s52BB   
+        LDA aC5
         CMP #$40
         BNE s52BB
         RTS 
@@ -782,7 +784,11 @@ f52C9   .BYTE $17,$01,$16,$05,$20,$13,$05,$11
 f52DE   .BYTE $10,$0C,$01,$19,$05,$12,$13,$56
         .BYTE $20,$31
 f52E8   .BYTE $12,$01,$0E,$04,$0F,$0D
-s52EE   LDA aC5
+;-------------------------------
+; s52EE
+;-------------------------------
+s52EE   
+        LDA aC5
         CMP #$26
         BEQ b52F5
         RTS 
@@ -792,51 +798,58 @@ b52F5   LDA #$01
         STA a1F99
         JMP j51E8
 
-s5300   LDA #>p0A08
-        STA a03
+;-------------------------------
+; s5300
+;-------------------------------
+s5300   
+        LDA #>p0A08
+        STA screenPtrYPPos
         LDA #<p0A08
-        STA a02
+        STA screenPtrXPos
         LDA #$04
-        STA a05
+        STA colorToDraw
+
         LDX #$00
 b530E   LDA f533F,X
-        STA a04
-        JSR s883A
-        INC a02
+        STA charToDraw
+        JSR DrawCharacter
+        INC screenPtrXPos
         INX 
         CPX #$1A
         BNE b530E
+
         LDX a57
-b531F   INC a05B1
-        LDA a05B1
+b531F   INC SCREEN_RAM + $01B1
+        LDA SCREEN_RAM + $01B1
         CMP #$3A
         BNE b5331
         LDA #$30
-        STA a05B1
-        INC a05B0
+        STA SCREEN_RAM + $01B1
+        INC SCREEN_RAM + $01B0
 b5331   DEX 
         BNE b531F
-j5336   =*+$02
-        LDA a05B0
+        LDA SCREEN_RAM + $01B0
         STA a62
-        LDA a05B1
+        LDA SCREEN_RAM + $01B1
         STA a63
         RTS 
 
 f533F   .BYTE $04,$09,$13,$14,$01,$0E,$03,$05
         .BYTE $20,$02,$05,$14,$17,$05,$05,$0E
-        .BYTE $20,$1A,$0F,$0E
-        ORA a13
-        LSR f20,X
-        BMI b5389
-j5359   LDA a56
+        .BYTE $20,$1A,$0F,$0E,$05,$13,$56,$20
+        .BYTE $30,$30
+;-------------------------------
+; j5359
+;-------------------------------
+j5359   
+        LDA a56
         BNE b535D
 b535D   LDX #$00
         LDA a56
         CMP #$02
         BEQ b5380
 b5365   LDA f5F00,X
-        STA f0400,X
+        STA SCREEN_RAM,X
         INX 
         CPX #$28
         BNE b5365
@@ -849,7 +862,7 @@ b5365   LDA f5F00,X
         RTS 
 
 b5380   LDA f5F80,X
-        STA f0400,X
+        STA SCREEN_RAM,X
         INX 
         CPX #$28
 b5389   BNE b5380
@@ -861,7 +874,11 @@ b5389   BNE b5380
         STA a54
         RTS 
 
-s539B   LDA a56
+;-------------------------------
+; s539B
+;-------------------------------
+s539B   
+        LDA a56
         BEQ b53AA
         CMP #$01
         BEQ b53A6
@@ -870,7 +887,7 @@ s539B   LDA a56
 b53A6   LDA #$02
         STA a56
 b53AA   LDX #$00
-b53AC   LDA f0400,X
+b53AC   LDA SCREEN_RAM,X
         STA f5F00,X
         INX 
         CPX #$28
@@ -883,10 +900,14 @@ b53AC   LDA f0400,X
         STA a5F32
         JMP j5359
 
-j53C9   LDA #$01
+;-------------------------------
+; j53C9
+;-------------------------------
+j53C9   
+        LDA #$01
         STA a56
         LDX #$00
-b53CF   LDA f0400,X
+b53CF   LDA SCREEN_RAM,X
         STA f5F80,X
         INX 
         CPX #$28
@@ -899,9 +920,13 @@ b53CF   LDA f0400,X
         STA a5FB2
         JMP j5359
 
-s53EC   LDX #$00
+;-------------------------------
+; s53EC
+;-------------------------------
+s53EC   
+        LDX #$00
 b53EE   LDA f540C,X
-        STA f0590,X
+        STA SCREEN_RAM + $0190,X
         INX 
         CPX #$28
         BNE b53EE
@@ -912,7 +937,7 @@ b53EE   LDA f540C,X
 
 b5400   LDX #$03
 b5402   LDA f5434,X
-        STA f05B2,X
+        STA SCREEN_RAM + $01B2,X
         DEX 
         BNE b5402
         RTS 
@@ -923,31 +948,44 @@ f540C   .BYTE $20,$20,$20,$19,$0F,$15,$12,$20
         .BYTE $03,$14,$52,$20,$10,$0C,$01,$19
         .BYTE $05,$12,$20,$0F,$0E,$05,$20,$20
 f5434   .BYTE $20,$14,$17,$0F
-s5438   LDX #$00
+
+;-------------------------------
+; DrawStatusLineFromStorage
+;-------------------------------
+DrawStatusLineFromStorage   
+        LDX #$00
 b543A   LDA f5F00,X
-        STA f0400,X
+        STA SCREEN_RAM,X
         LDA f5F80,X
-        STA f0428,X
+        STA SCREEN_RAM + $0028,X
         INX 
         CPX #$15
         BNE b543A
         RTS 
 
-s544C   LDX #$00
-b544E   LDA f90F8,X
+;-------------------------------
+; DrawStatusLine
+;-------------------------------
+DrawStatusLine   
+        LDX #$00
+b544E   LDA txtStatusLine,X
         AND #$3F
-        STA f0400,X
+        STA SCREEN_RAM,X
         INX 
         CPX #$3D
         BNE b544E
         RTS 
 
-s545C   LDX #$00
+;-------------------------------
+; WriteHiScoreTableToStorage
+;-------------------------------
+WriteHiScoreTableToStorage   
+        LDX #$00
 b545E   LDA #$20
         STA f5E00,X
         INX 
         BNE b545E
-b5466   LDA f5474,X
+b5466   LDA txtHiScoreTable,X
         AND #$3F
         STA f5E00,X
         INX 
@@ -955,20 +993,24 @@ b5466   LDA f5474,X
         BNE b5466
         RTS 
 
-f5474   .TEXT "1  0000000    I LIKE CAMELS REALLY      "
-        .TEXT "            2  0000000    I GOT NOTHING "
-        .TEXT "AGAINST SHEEP EITHER    3  0000000    LL"
-        .TEXT "AMAS ARE LLOVELY                    4  0"
-        .TEXT "000000    2D SPACE INVADERS RULE THE ZON"
-        .TEXT "E OK    "
-s5544   LDA #$04
-        STA a02
+txtHiScoreTable .TEXT "1  0000000    I LIKE CAMELS REALLY      "
+                .TEXT "            2  0000000    I GOT NOTHING "
+                .TEXT "AGAINST SHEEP EITHER    3  0000000    LL"
+                .TEXT "AMAS ARE LLOVELY                    4  0"
+                .TEXT "000000    2D SPACE INVADERS RULE THE ZON"
+                .TEXT "E OK    "
+;-------------------------------
+; s5544
+;-------------------------------
+s5544   
+        LDA #$04
+        STA screenPtrXPos
         LDA #>p5E02
         STA a61
         LDA #<p5E02
         STA a60
 b5550   LDY #$01
-b5552   LDA f040D,Y
+b5552   LDA SCREEN_RAM + $000D,Y
         CMP (p60),Y
         BEQ b555D
         BPL b556E
@@ -980,14 +1022,14 @@ b5562   LDA a60
         CLC 
         ADC #$34
         STA a60
-        DEC a02
+        DEC screenPtrXPos
         BNE b5550
         RTS 
 
 b556E   DEC a60
         DEC a60
         LDY #$00
-        DEC a02
+        DEC screenPtrXPos
         BNE b557F
         LDX a60
         LDY a60
@@ -997,7 +1039,11 @@ b557F   LDA #$FF
         STA (p60),Y
         LDY #$CF
         LDX #$9B
-j5587   LDA f5E00,X
+;-------------------------------
+; j5587
+;-------------------------------
+j5587   
+        LDA f5E00,X
         STA f5E00,Y
         CMP #$FF
         BEQ j5596
@@ -1005,13 +1051,17 @@ j5587   LDA f5E00,X
         DEX 
         JMP j5587
 
-j5596   LDA #$20
+;-------------------------------
+; j5596
+;-------------------------------
+j5596   
+        LDA #$20
         STA f5E00,X
         STA f5E00,Y
         INX 
         INX 
         LDY #$01
-b55A2   LDA f040D,Y
+b55A2   LDA SCREEN_RAM + $000D,Y
         STA f5E01,X
         INX 
         INY 
@@ -1020,16 +1070,16 @@ b55A2   LDA f040D,Y
         JSR s51C4
         JSR s5768
         LDA #>p0307
-        STA a03
+        STA screenPtrYPPos
         LDA #<p0307
-        STA a02
+        STA screenPtrXPos
         LDA #$03
-        STA a05
+        STA colorToDraw
         LDX #$00
 b55C2   LDA f55ED,X
-        STA a04
-        JSR s883A
-        INC a02
+        STA charToDraw
+        JSR DrawCharacter
+        INC screenPtrXPos
         INX 
         CPX #$18
         BNE b55C2
@@ -1041,9 +1091,9 @@ b55C2   LDA f55ED,X
         INX 
 b55DA   LDY #$03
 b55DC   LDA f55ED,X
-        STA a04
-        JSR s883A
-        INC a02
+        STA charToDraw
+        JSR DrawCharacter
+        INC screenPtrXPos
         INX 
         DEY 
         BNE b55DC
@@ -1053,52 +1103,56 @@ f55ED   .BYTE $05,$0E,$14,$05,$12,$20,$19,$0F
         .BYTE $15,$12,$20,$0E,$01,$0D,$05,$52
         .BYTE $20,$10,$0C,$01,$19,$05,$12,$20
         .BYTE $0F,$0E,$05,$14,$17,$0F
-j560B   LDX #$28
+;-------------------------------
+; j560B
+;-------------------------------
+j560B   
+        LDX #$28
 b560D   LDA #$01
-        STA fD98F,X
+        STA COLOR_RAM + $018F,X
         LDA #$20
-        STA f058F,X
+        STA SCREEN_RAM + $018F,X
         DEX 
         BNE b560D
         LDA #$02
-        STA a02
+        STA screenPtrXPos
 b561E   JSR s52BB
-        LDX a02
+        LDX screenPtrXPos
         LDA #$00
-        STA f0590,X
+        STA SCREEN_RAM + $0190,X
         JSR s5695
         CMP #$00
         BEQ b5645
         CMP #$FF
         BEQ b5659
-        LDX a02
-        STA f0590,X
-        INC a02
-        LDA a02
+        LDX screenPtrXPos
+        STA SCREEN_RAM + $0190,X
+        INC screenPtrXPos
+        LDA screenPtrXPos
         CMP #$27
         BNE b561E
-        DEC a02
+        DEC screenPtrXPos
         JMP b561E
 
-b5645   LDX a02
+b5645   LDX screenPtrXPos
         LDA #$20
-        STA f0590,X
-        DEC a02
-        LDA a02
+        STA SCREEN_RAM + $0190,X
+        DEC screenPtrXPos
+        LDA screenPtrXPos
         CMP #$01
         BNE b561E
-        INC a02
+        INC screenPtrXPos
         JMP b561E
 
 b5659   LDA #$20
-        LDX a02
-        STA f0590,X
+        LDX screenPtrXPos
+        STA SCREEN_RAM + $0190,X
         LDA a60
         CLC 
         ADC #$0C
         STA a60
         LDY #$00
-b5669   LDA f0590,Y
+b5669   LDA SCREEN_RAM + $0190,Y
         STA (p60),Y
         INY 
         CPY #$28
@@ -1108,21 +1162,25 @@ b5669   LDA f0590,Y
         LDA #$00
         STA a60
         LDA #$31
-        STA a02
-b567F   LDA a02
+        STA screenPtrXPos
+b567F   LDA screenPtrXPos
         LDY #$00
         STA (p60),Y
         LDA a60
         CLC 
         ADC #$34
         STA a60
-        INC a02
-        LDA a02
+        INC screenPtrXPos
+        LDA screenPtrXPos
         CMP #$35
         BNE b567F
         RTS 
 
-s5695   LDA aC5
+;-------------------------------
+; s5695
+;-------------------------------
+s5695   
+        LDA aC5
         CMP #$40
         BEQ s5695
         LDX #$00
@@ -1144,7 +1202,11 @@ f56CD   .BYTE $00,$0A,$1C,$14,$12,$0E,$15,$1A
         .BYTE $1D,$21,$22,$25,$2A,$24,$27,$26
         .BYTE $29,$3E,$11,$0D,$16,$1E,$1F,$09
         .BYTE $17,$19,$0C,$3C,$2C,$2F,$01
-j56EC   LDA a5A
+;-------------------------------
+; j56EC
+;-------------------------------
+j56EC   
+        LDA a5A
         AND #$10
         BEQ b56F5
         JMP j572B
@@ -1175,7 +1237,11 @@ b5723   INC a5B
         JSR s8D2F
         JMP j925F
 
-j572B   LDA a5A
+;-------------------------------
+; j572B
+;-------------------------------
+j572B   
+        LDA a5A
         AND #$0F
         TAX 
         LDY #$06
@@ -1198,7 +1264,11 @@ b5732   LDA #$20
 f5756   .BYTE $20,$08,$05,$12,$05,$20,$17,$05
         .BYTE $20,$07,$0F,$51,$51,$51,$20,$20
         .BYTE $20,$20
-s5768   LDA #$FE
+;-------------------------------
+; s5768
+;-------------------------------
+s5768   
+        LDA #$FE
         STA a13
         LDA #>p7E58
         STA a15
@@ -1215,12 +1285,16 @@ s5768   LDA #$FE
         STA a2E
         RTS 
 
-s5787   JSR s9406
+;-------------------------------
+; s5787
+;-------------------------------
+s5787   
+        JSR s9406
         LDX #$00
 b578C   LDA f57A7,X
-        STA f0590,X
+        STA SCREEN_RAM + $0190,X
         LDA #$01
-        STA fD990,X
+        STA COLOR_RAM + $0190,X
         INX 
         CPX #$28
         BNE b578C
@@ -1236,16 +1310,20 @@ f57A7   .BYTE $20,$20,$17,$05,$0C,$0C,$20,$04
         .BYTE $16,$05,$04,$20,$03,$01,$0D,$05
         .BYTE $0C,$0B,$09,$0E,$04,$54,$20,$20
         .BYTE $20,$20
-j57D1   LDA a5E
+;-------------------------------
+; j57D1
+;-------------------------------
+j57D1   
+        LDA a5E
         BNE b57D6
         RTS 
 
 b57D6   LDX #$00
 b57D8   LDA f57EF,X
         AND #$3F
-        STA f0590,X
+        STA SCREEN_RAM + $0190,X
         LDA #$01
-        STA fD990,X
+        STA COLOR_RAM + $0190,X
         INX 
         CPX #$28
         BNE b57D8
@@ -1254,7 +1332,11 @@ b57D8   LDA f57EF,X
         RTS 
 
 f57EF   .TEXT "         CHEAT  MODE   OPERATIVE        "
-s5817   JSR s9CFF
+;-------------------------------
+; s5817
+;-------------------------------
+s5817   
+        JSR s9CFF
         LDA a5E
         BNE b5824
         LDA aC5
@@ -1265,9 +1347,9 @@ b5824   RTS
 b5825   LDX #$00
 b5827   LDA f5848,X
         AND #$3F
-        STA f0590,X
+        STA SCREEN_RAM + $0190,X
         LDA #$01
-        STA fD990,X
+        STA COLOR_RAM + $0190,X
         INX 
         CPX #$28
         BNE b5827
@@ -1282,90 +1364,114 @@ f5848   .TEXT "  PAUSE MODE ON      ANY KEY RESTARTS   "
 
 .include "padding.asm"
 
+;------------------------------------------------
+; LaunchGame
 ; Execution jumps to here from SYS at top
-        JSR s545C
+;------------------------------------------------
+LaunchGame
+        JSR WriteHiScoreTableToStorage
         LDA #$7F
         STA $DC0D    ;CIA1: CIA Interrupt Control Register
-        JSR s8A42
-        JMP j8A3C
+        JSR InitializeStatusLine
+        JMP ContinueInitializing
 
-s87FE   LDA #>f0400
-        STA a49
-        LDA #<f0400
-        STA a48
+;-------------------------------
+; InitScreenPtrArray
+;-------------------------------
+InitScreenPtrArray   
+        LDA #>SCREEN_RAM
+        STA zpHi
+        LDA #<SCREEN_RAM
+        STA zpLo
         LDX #$00
-b8808   LDA a48
-        STA f0340,X
-        LDA a49
-        STA f0360,X
-        LDA a48
+b8808   LDA zpLo
+        STA SCREEN_PRT_LO,X
+        LDA zpHi
+        STA SCREEN_PTR_HI,X
+        LDA zpLo
         CLC 
         ADC #$28
-        STA a48
-        LDA a49
+        STA zpLo
+        LDA zpHi
         ADC #$00
-        STA a49
+        STA zpHi
         INX 
         CPX #$1B
         BNE b8808
         RTS 
 
-s8825   LDX a03
-        LDY a02
-        LDA f0340,X
-        STA a48
-        LDA f0360,X
-        STA a49
+;-------------------------------
+; Screen_GetPtr
+;-------------------------------
+Screen_GetPtr   
+        LDX screenPtrYPPos
+        LDY screenPtrXPos
+        LDA SCREEN_PRT_LO,X
+        STA zpLo
+        LDA SCREEN_PTR_HI,X
+        STA zpHi
         RTS 
 
-        JSR s8825
-        LDA (p48),Y
+        JSR Screen_GetPtr
+        LDA (zpLo),Y
 b8839   RTS 
 
-s883A   LDA a02
+;-------------------------------
+; DrawCharacter
+;-------------------------------
+DrawCharacter   
+        LDA screenPtrXPos
         CMP #$28
         BPL b8839
         TXA 
         PHA 
         TYA 
         PHA 
-        JSR s8825
-        LDA a04
-        STA (p48),Y
-        LDA a49
+        JSR Screen_GetPtr
+        LDA charToDraw
+        STA (zpLo),Y
+        LDA zpHi
         CLC 
         ADC #$D4
-        STA a49
-        LDA a05
-        STA (p48),Y
+        STA zpHi
+        LDA colorToDraw
+        STA (zpLo),Y
         PLA 
         TAY 
         PLA 
         TAX 
         RTS 
 
-s885B   LDX #$00
+;-------------------------------
+; ClearScreen
+;-------------------------------
+ClearScreen   
+        LDX #$00
 b885D   LDA #$20
-        STA f0400,X
-        STA f0500,X
-        STA f0600,X
-        STA f0700,X
+        STA SCREEN_RAM,X
+        STA SCREEN_RAM + $0100,X
+        STA SCREEN_RAM + $0200,X
+        STA SCREEN_RAM + $0300,X
         DEX 
         BNE b885D
         RTS 
 
-s886F   LDX #$2F
+;-------------------------------
+; SetInterruptHandler
+;-------------------------------
+SetInterruptHandler   
+        LDX #$2F
         SEI 
-        LDA #<p88D5
-        STA a0314    ;IRQ
-        LDA #>p88D5
-        STA a0315    ;IRQ
+        LDA #<InterruptHandler
+        STA a034    ;IRQ
+        LDA #>InterruptHandler
+        STA a035    ;IRQ
         LDA #$80
-        STA a0291
+        STA a021
         LDA #<p88D4
-        STA a0318    ;NMI
+        STA a038    ;NMI
         LDA #>p88D4
-        STA a0319    ;NMI
+        STA a039    ;NMI
         LDA #$00
         STA a1E
         STA a31
@@ -1402,23 +1508,35 @@ s886F   LDX #$2F
 
 p88D4   RTI 
 
-p88D5   LDA $D019    ;VIC Interrupt Request Register (IRR)
+;------------------------------------------------
+; InterruptHandler 
+;------------------------------------------------
+InterruptHandler 
+        LDA $D019    ;VIC Interrupt Request Register (IRR)
         AND #$01
         BNE b88DF
-        JMP eEA31
+        JMP kernelInterrupt
 
 b88DF   INC a1E
-        JMP j8BC9
+        JMP PerformAnimationAndScrolling
 
-j88E4   LDA $D011    ;VIC Control Register 1
+j88E4   
+        LDA $D011    ;VIC Control Register 1
         AND #$7F
         STA $D011    ;VIC Control Register 1
-j88EC   LDA #$81
+
+j88EC   
+        LDA #$81
         STA $D019    ;VIC Interrupt Request Register (IRR)
         STA $D01A    ;VIC Interrupt Mask Register (IMR)
-        JMP eEA31
+        JMP kernelInterrupt
+        ;Done
 
-j88F7   LDA a1A
+;-------------------------------
+; j88F7
+;-------------------------------
+j88F7   
+        LDA a1A
         BNE b8903
 b88FB   JMP j88E4
 
@@ -1515,26 +1633,41 @@ f8A25   .BYTE $08,$03,$04,$06,$07,$09,$03,$08
         .BYTE $05,$0A,$07,$09,$03
 f8A32   .BYTE $01,$07,$03,$05,$04,$06
 f8A38   .BYTE $00,$54,$57,$4F
-j8A3C   JSR s87FE
-        JMP j8A62
 
-s8A42   LDX #$00
-b8A44   LDA f90F8,X
+;-------------------------------
+; ContinueInitializing
+;-------------------------------
+ContinueInitializing   
+        JSR InitScreenPtrArray
+        JMP InitializeGame
+
+;-------------------------------
+; InitializeStatusLine
+;-------------------------------
+InitializeStatusLine   
+        LDX #$00
+b8A44   LDA txtStatusLine,X
         AND #$3F
         STA f5F00,X
         STA f5F80,X
         INX 
         CPX #$28
         BNE b8A44
+
         LDX #$03
 b8A56   LDA f8A38,X
         AND #$3F
         STA f5F88,X
         DEX 
         BNE b8A56
+
         RTS 
 
-j8A62   LDA #$FF
+;-------------------------------
+; InitializeGame
+;-------------------------------
+InitializeGame   
+        LDA #$FF
         STA a32
         LDA #$00
         STA a5E
@@ -1563,7 +1696,7 @@ j8A62   LDA #$FF
         STA a5D
         LDA #$08
         STA a40
-        JSR s886F
+        JSR SetInterruptHandler
         LDA #$04
         STA a1F
         LDA #<p0312
@@ -1579,14 +1712,16 @@ j8A62   LDA #$FF
         STA a57
         LDA #$05
         STA a54
-        JSR s885B
+        JSR ClearScreen
+
         LDX #$C8
 b8AC6   LDA #$28
-        STA f071F,X
+        STA SCREEN_RAM + $031F,X
         LDA #$06
-        STA fDB1F,X
+        STA COLOR_RAM + $031F,X
         DEX 
         BNE b8AC6
+
         LDA $D016    ;VIC Control Register 2
         ORA #$10
         STA $D016    ;VIC Control Register 2
@@ -1598,7 +1733,8 @@ b8AC6   LDA #$28
         LDA #$18
         STA $D018    ;VIC Memory Control Register
 
-j8AEA   LDX #$0C
+j8AEA   
+        LDX #$0C
 b8AEC   LDA f8A0D,X
         STA f1F00,X
         LDA f8A19,X
@@ -1620,7 +1756,11 @@ b8AEC   LDA f8A0D,X
         STA a5FB2
         JMP j8B53
 
-s8B20   LDX #$00
+;-------------------------------
+; PrepareSomeStorage
+;-------------------------------
+PrepareSomeStorage   
+        LDX #$00
         LDA #$00
 b8B24   STA f1E40,X
         STA f1E50,X
@@ -1642,12 +1782,20 @@ b8B24   STA f1E40,X
         STA f1E40
         RTS 
 
-j8B53   JSR s8B20
-        JSR s9019
-        JSR s5438
-        JMP j8F7C
+;-------------------------------
+; j8B53
+;-------------------------------
+j8B53   
+        JSR PrepareSomeStorage
+        JSR DrawTitleScreen
+        JSR DrawStatusLineFromStorage
+        JMP TitleScreenLoop
 
-s8B5F   TXA 
+;-------------------------------
+; s8B5F
+;-------------------------------
+s8B5F   
+        TXA 
         PHA 
         TYA 
         PHA 
@@ -1694,25 +1842,33 @@ b8B96   ROL
 b8BA3   PLA 
         ORA a1F9C,Y
         STA a1F9C,Y
-j8BAA   PLA 
+;-------------------------------
+; j8BAA
+;-------------------------------
+j8BAA   
+        PLA 
         TAY 
         PLA 
         TAX 
         RTS 
 
-        JSR s883A
-        INC a03
-        INC a04
-        JSR s883A
-        DEC a03
-        INC a04
-        INC a02
-        JSR s883A
-        INC a03
-        INC a04
-        JMP s883A
+        JSR DrawCharacter
+        INC screenPtrYPPos
+        INC charToDraw
+        JSR DrawCharacter
+        DEC screenPtrYPPos
+        INC charToDraw
+        INC screenPtrXPos
+        JSR DrawCharacter
+        INC screenPtrYPPos
+        INC charToDraw
+        JMP DrawCharacter
 
-j8BC9   LDA a1E
+;-------------------------------
+; PerformAnimationAndScrolling
+;-------------------------------
+PerformAnimationAndScrolling   
+        LDA a1E
         CMP #$01
         BNE b8BE1
         LDA #$D8
@@ -1775,37 +1931,41 @@ b8C49   CMP #$FF
         LDA #$07
         STA a1F
         LDX #$01
-b8C53   LDA f0630,X
-        STA f062F,X
-        LDA f0658,X
-        STA f0657,X
-        LDA f0680,X
-        STA f067F,X
-        LDA f06A8,X
-        STA f06A7,X
-        LDA f06D0,X
-        STA f06CF,X
-        LDA f06F8,X
-        STA f06F7,X
-        LDA fDAD0,X
-        STA fDACF,X
-        LDA fDAF8,X
-        STA fDAF7,X
-        LDA fDAA8,X
-        STA fDAA7,X
-        LDA fDA80,X
-        STA fDA7F,X
-        LDA fDA58,X
-        STA fDA57,X
-        LDA fDA30,X
-        STA fDA2F,X
+b8C53   LDA SCREEN_RAM + $0230,X
+        STA SCREEN_RAM + $022F,X
+        LDA SCREEN_RAM + $0258,X
+        STA SCREEN_RAM + $0257,X
+        LDA SCREEN_RAM + $0280,X
+        STA SCREEN_RAM + $027F,X
+        LDA SCREEN_RAM + $02A8,X
+        STA SCREEN_RAM + $02A7,X
+        LDA SCREEN_RAM + $02D0,X
+        STA SCREEN_RAM + $02CF,X
+        LDA SCREEN_RAM + $02F8,X
+        STA SCREEN_RAM + $02F7,X
+        LDA COLOR_RAM + $02D0,X
+        STA COLOR_RAM + $02CF,X
+        LDA COLOR_RAM + $02F8,X
+        STA COLOR_RAM + $02F7,X
+        LDA COLOR_RAM + $02A8,X
+        STA COLOR_RAM + $02A7,X
+        LDA COLOR_RAM + $0280,X
+        STA COLOR_RAM + $027F,X
+        LDA COLOR_RAM + $0258,X
+        STA COLOR_RAM + $0257,X
+        LDA COLOR_RAM + $0230,X
+        STA COLOR_RAM + $022F,X
         INX 
         CPX #$28
         BNE b8C53
         JMP j8CA7
 
 f8CA3   .TEXT ",;AE"
-j8CA7   LDA a5A
+;-------------------------------
+; j8CA7
+;-------------------------------
+j8CA7   
+        LDA a5A
         BEQ b8CAE
         JMP j56EC
 
@@ -1827,7 +1987,11 @@ b8CC3   CMP #$03
 
 b8CCA   JMP j8F31
 
-j8CCD   LDA a22
+;-------------------------------
+; j8CCD
+;-------------------------------
+j8CCD   
+        LDA a22
         BNE b8CEC
         JSR s8F51
         JSR s8D1D
@@ -1865,39 +2029,55 @@ b8CF2   LDA a23
         STA a22
         JMP j925F
 
-s8D1D   INC a24
+;-------------------------------
+; s8D1D
+;-------------------------------
+s8D1D   
+        INC a24
         LDX a24
         LDA fA000,X
         RTS 
 
-s8D25   LDX #$06
+;-------------------------------
+; s8D25
+;-------------------------------
+s8D25   
+        LDX #$06
 b8D27   LDA #$20
         STA f1FF0,X
         DEX 
         BNE b8D27
-s8D2F   LDA f1FF1
-        STA f0657
+;-------------------------------
+; s8D2F
+;-------------------------------
+s8D2F   
+        LDA f1FF1
+        STA SCREEN_RAM + $0257
         LDA a1FF2
-        STA f067F
+        STA SCREEN_RAM + $027F
         LDA a1FF3
-        STA f06A7
+        STA SCREEN_RAM + $02A7
         LDA a1FF4
-        STA f06CF
+        STA SCREEN_RAM + $02CF
         LDA a1FF5
-        STA f06F7
+        STA SCREEN_RAM + $02F7
         LDA a1FF6
-        STA f071F
+        STA SCREEN_RAM + $031F
         LDA a1FF9
-        STA fDA57
-        STA fDA7F
-        STA fDAA7
-        STA fDACF
-        STA fDAF7
-        STA fDB1F
+        STA COLOR_RAM + $0257
+        STA COLOR_RAM + $027F
+        STA COLOR_RAM + $02A7
+        STA COLOR_RAM + $02CF
+        STA COLOR_RAM + $02F7
+        STA COLOR_RAM + $031F
         DEC a26
         RTS 
 
-j8D6B   LDA a22
+;-------------------------------
+; j8D6B
+;-------------------------------
+j8D6B   
+        LDA a22
         BNE b8D79
         JSR s8D1D
         AND #$03
@@ -1937,14 +2117,22 @@ b8DA8   LDA a23
         STA a23
 b8DB5   JSR s8D25
         JSR s8F51
-j8DBB   DEC a23
+;-------------------------------
+; j8DBB
+;-------------------------------
+j8DBB   
+        DEC a23
         BNE b8DC3
         LDA #$00
         STA a22
 b8DC3   JSR s8D2F
         JMP j925F
 
-j8DC9   LDA #$0D
+;-------------------------------
+; j8DC9
+;-------------------------------
+j8DC9   
+        LDA #$0D
         STA a1FF9
         LDA a23
         CMP #$01
@@ -1979,7 +2167,11 @@ f8E24   .BYTE $20,$20,$20,$20,$20,$26,$00,$00
         .BYTE $20,$20,$20,$27,$28,$28,$00,$00
         .BYTE $20,$20,$20,$20,$27,$28,$00,$00
         .BYTE $20,$20,$20,$20,$20,$27,$00,$00
-j8E74   JSR s8D25
+;-------------------------------
+; j8E74
+;-------------------------------
+j8E74   
+        JSR s8D25
         LDA #$07
         STA a1FF9
         LDA #$06
@@ -2014,7 +2206,11 @@ b8EAC   INX
         BNE b8E9A
         JMP j8DBB
 
-j8EB5   LDA a22
+;-------------------------------
+; j8EB5
+;-------------------------------
+j8EB5   
+        LDA a22
         BNE b8EE0
         JSR s8D1D
         AND #$07
@@ -2075,7 +2271,11 @@ b8F22   DEC a25
         INC a25
         JMP b8F1A
 
-j8F31   JSR s8D1D
+;-------------------------------
+; j8F31
+;-------------------------------
+j8F31   
+        JSR s8D1D
         AND #$03
         TAX 
         DEX 
@@ -2092,7 +2292,11 @@ j8F31   JSR s8D1D
         STA a23
         JMP j8CA7
 
-s8F51   LDA a26
+;-------------------------------
+; s8F51
+;-------------------------------
+s8F51   
+        LDA a26
         AND #$80
         BNE b8F58
         RTS 
@@ -2107,7 +2311,11 @@ b8F58   LDA #$03
         JSR s8D2F
         JMP j925F
 
-j8F6B   JSR s8D25
+;-------------------------------
+; j8F6B
+;-------------------------------
+j8F6B   
+        JSR s8D25
         JSR s8D2F
         DEC a27
         BNE b8F79
@@ -2115,34 +2323,46 @@ j8F6B   JSR s8D25
         STA a21
 b8F79   JMP j925F
 
-j8F7C   JSR s8FB0
+;-------------------------------
+; TitleScreenLoop
+;-------------------------------
+FIRE_PRESSED = $10
+
+TitleScreenLoop   
+        JSR s8FB0
         INC $D025    ;Sprite Multi-Color Register 0
         JSR s9170
         JSR s52EE
-        LDA $DC00    ;CIA1: Data Port Register A
-        AND #$10
-        BEQ b8F92
-        JMP j8F7C
 
-b8F92   LDA #$00
+        LDA JOYSTICK1    ;CIA1: Data Port Register A
+        AND #FIRE_PRESSED
+        BEQ StartGame
+        JMP TitleScreenLoop
+
+StartGame
+        LDA #$00
         STA a1A
-        JSR s8A42
+        JSR InitializeStatusLine
         LDA a62
         STA a5FA1
         LDA a63
         STA a5FA2
-        JSR s544C
+        JSR DrawStatusLine
         LDA #$10
         STA a5A
         JSR s5143
         JMP j937B
 
-s8FB0   DEC a28
+;-------------------------------
+; s8FB0
+;-------------------------------
+s8FB0   
+        DEC a28
         BEQ b8FB5
         RTS 
 
 b8FB5   LDA #$01
-        STA a05
+        STA colorToDraw
         LDA #$10
         STA a28
         LDX #$0C
@@ -2159,39 +2379,49 @@ b8FCB   DEY
         BNE b8FCB
         RTS 
 
-s8FD2   LDA f8A25,X
+;-------------------------------
+; s8FD2
+;-------------------------------
+s8FD2   
+        LDA f8A25,X
         STA f1F30,X
         LDA f1F00,X
-        STA a02
+        STA screenPtrXPos
         LDA f1F10,X
-        STA a03
+        STA screenPtrYPPos
         DEC f1F20,X
         LDA f1F20,X
         CMP #$1B
         BEQ b8FF1
-j8FEC   STA a04
-        JMP s883A
+
+j8FEC   
+        STA charToDraw
+        JMP DrawCharacter
 
 b8FF1   LDA #$20
-        STA a04
-        JSR s883A
+        STA charToDraw
+        JSR DrawCharacter
         LDA #$1F
         STA f1F20,X
         DEC f1F00,X
-        DEC a02
-        LDA a02
+        DEC screenPtrXPos
+        LDA screenPtrXPos
         CMP #$FF
         BEQ b900D
         LDA #$1F
         JMP j8FEC
 
 b900D   LDA #$27
-        STA a02
+        STA screenPtrXPos
         STA f1F00,X
         LDA #$1F
         JMP j8FEC
 
-s9019   LDY #$00
+;-------------------------------
+; DrawTitleScreen
+;-------------------------------
+DrawTitleScreen   
+        LDY #$00
         JSR s92F6
         LDA #$02
         STA $D025    ;Sprite Multi-Color Register 0
@@ -2202,6 +2432,7 @@ s9019   LDY #$00
         STA a0E
         LDA #>p15D3
         STA a0F
+
 b9032   LDA #$54
         STA a08
         STA f1E50,Y
@@ -2219,6 +2450,7 @@ b9032   LDA #$54
         INY 
         CPY #$05
         BNE b9032
+
         LDA #$1F
         STA $D01D    ;Sprites Expand 2x Horizontal (X)
         STA $D017    ;Sprites Expand 2x Vertical (Y)
@@ -2232,32 +2464,36 @@ b9032   LDA #$54
         LDA #$1E
         STA $D01C    ;Sprites Multi-Color Mode Select
         LDA #$01
-        STA a05
+        STA colorToDraw
         LDA #>p0A0A
-p9078   STA a03
+p9078   STA screenPtrYPPos
         LDA #<p0A0A
-        STA a02
-b907E   LDA f90E4,X
+        STA screenPtrXPos
+
+b907E   LDA txtTitle,X
         AND #$3F
-        STA a04
-        JSR s883A
-        INC a02
+        STA charToDraw
+        JSR DrawCharacter
+        INC screenPtrXPos
         INX 
         CPX #$14
         BNE b907E
+
+        ;Draw the status line
         LDX #$50
-b9091   LDA f90F7,X
+b9091   LDA startOfTxtStatusLine,X
         CMP #$48
         BEQ b909A
         AND #$3F
-b909A   STA f03FF,X
+b909A   STA startOfScreenRAM,X
         LDA #$01
-        STA fD7FF,X
+        STA startOfColorRAM,X
         DEX 
         BNE b9091
+
         LDX #$28
 b90A7   LDA f9148,X
-        STA fD827,X
+        STA COLOR_RAM + $0027,X
         DEX 
         BNE b90A7
         LDA #>p9078
@@ -2265,9 +2501,9 @@ b90A7   LDA f9148,X
         LDA #<p9078
         STA a07
         LDA #$D7
-        STA a02
+        STA screenPtrXPos
         LDY #$05
-b90BE   LDA a02
+b90BE   LDA screenPtrXPos
         STA f1F70,Y
         LDA #$01
         STA f1F60,Y
@@ -2280,22 +2516,26 @@ b90BE   LDA a02
         CLC 
         ADC #$0C
         STA a07
-        INC a02
+        INC screenPtrXPos
         INY 
         CPY #$08
         BNE b90BE
         RTS 
 
-f90E4   .TEXT "OF THE MUTANT CAMEL"
-f90F7   .TEXT "S"
-f90F8   .TEXT "  PLAYER ONE  0000000  NEXT ZONE 00 KM  "
+txtTitle   .TEXT "OF THE MUTANT CAMEL"
+startOfTxtStatusLine   .TEXT "S"
+txtStatusLine   .TEXT "  PLAYER ONE  0000000  NEXT ZONE 00 KM  "
         .TEXT "  NEUTRONIUM STATUS  HHHHHHHHHHHHHHHHHH "
 f9148   .BYTE $20,$01,$01,$01,$01,$01,$01,$01
         .BYTE $01,$01,$01,$01,$01,$01,$01,$01
         .BYTE $01,$01,$01,$01,$01,$01,$07,$07
         .BYTE $07,$04,$04,$04,$07,$07,$07,$04
         .BYTE $04,$04,$07,$07,$07,$04,$04,$04
-s9170   LDA a1A
+;-------------------------------
+; s9170
+;-------------------------------
+s9170   
+        LDA a1A
         BEQ b9175
         RTS 
 
@@ -2331,7 +2571,11 @@ b9175   LDA #$FE
         STA a2D
         RTS 
 
-j91BA   LDA a2E
+;-------------------------------
+; j91BA
+;-------------------------------
+j91BA   
+        LDA a2E
         BNE b91C1
 b91BE   JMP b88FB
 
@@ -2369,7 +2613,11 @@ b91ED   TAX
         STA $D412    ;Voice 3: Control Register
 b9203   JMP b88FB
 
-j9206   INC a2F
+;-------------------------------
+; j9206
+;-------------------------------
+j9206   
+        INC a2F
         LDA a2F
         CMP #$06
         BNE b9212
@@ -2413,7 +2661,11 @@ b924A   LDA f62C0,X
         JMP j925F
 
 f9259   .BYTE $00,$01,$02,$03,$02,$01
-j925F   JSR s942F
+;-------------------------------
+; j925F
+;-------------------------------
+j925F   
+        JSR s942F
         INC a30
         LDA a30
         AND #$01
@@ -2437,11 +2689,19 @@ b928E   JSR s929D
         JMP j9297
 
 b9294   JSR s92CF
-j9297   DEX 
+;-------------------------------
+; j9297
+;-------------------------------
+j9297   
+        DEX 
         BNE b9283
         JMP j88F7
 
-s929D   TXA 
+;-------------------------------
+; s929D
+;-------------------------------
+s929D   
+        TXA 
         TAY 
         DEY 
         TYA 
@@ -2462,10 +2722,14 @@ s929D   TXA
 b92C2   LDA f1F5F,X
         STA $D026,X  ;Sprite Multi-Color Register 1
         LDA f1F6F,X
-        STA f07F7,X
+        STA SCREEN_RAM + $03F7,X
 b92CE   RTS 
 
-s92CF   LDA f1F87,X
+;-------------------------------
+; s92CF
+;-------------------------------
+s92CF   
+        LDA f1F87,X
         CMP #$FF
         BEQ b92CE
         TXA 
@@ -2482,10 +2746,14 @@ s92CF   LDA f1F87,X
         LDA f1F67,X
         STA $D026,X  ;Sprite Multi-Color Register 1
         LDA f1F77,X
-        STA f07F7,X
+        STA SCREEN_RAM + $03F7,X
         RTS 
 
-s92F6   TYA 
+;-------------------------------
+; s92F6
+;-------------------------------
+s92F6   
+        TYA 
         PHA 
         AND #$07
         SEC 
@@ -2503,7 +2771,9 @@ b92FF   ROL
         TYA 
         ORA a1F98
         STA a1F98
-j9311   PLA 
+
+j9311   
+        PLA 
         TAY 
         LDA #$88
         STA f1F80,Y
@@ -2517,7 +2787,11 @@ b9319   TYA
         STA a32
         JMP j9311
 
-s9328   TYA 
+;-------------------------------
+; s9328
+;-------------------------------
+s9328   
+        TYA 
         PHA 
         LDA #$00
         STA f1F80,Y
@@ -2540,7 +2814,11 @@ b9337   ROL
         STA a06
         AND a1F98
         STA a1F98
-j934D   LDA a06
+;-------------------------------
+; j934D
+;-------------------------------
+j934D   
+        LDA a06
         AND $D017    ;Sprites Expand 2x Vertical (Y)
         STA $D017    ;Sprites Expand 2x Vertical (Y)
         LDA a06
@@ -2563,9 +2841,13 @@ b9368   TYA
         STA a1F99
         JMP j934D
 
-j937B   LDA #$30
-        STA a0421
-        STA a0422
+;-------------------------------
+; j937B
+;-------------------------------
+j937B   
+        LDA #$30
+        STA SCREEN_RAM + $0021
+        STA SCREEN_RAM + $0022
         LDA a59
         BEQ b938E
         JSR s8D1D
@@ -2574,18 +2856,22 @@ j937B   LDA #$30
 b938E   LDX a50
         INX 
 b9391   LDY a57
-b9393   INC a0422
-        LDA a0422
+b9393   INC SCREEN_RAM + $0022
+        LDA SCREEN_RAM + $0022
         CMP #$3A
         BNE b93A5
-        INC a0421
+        INC SCREEN_RAM + $0021
         LDA #$30
-        STA a0422
+        STA SCREEN_RAM + $0022
 b93A5   DEY 
         BNE b9393
         DEX 
         BNE b9391
-j93AB   LDA #$01
+;-------------------------------
+; j93AB
+;-------------------------------
+j93AB   
+        LDA #$01
         STA a09
 b93AF   LDY a09
         JSR s9328
@@ -2599,7 +2885,7 @@ b93AF   LDY a09
         CMP #$08
         BNE b93AF
         JSR s9406
-        JSR s8B20
+        JSR PrepareSomeStorage
         LDA #$01
         STA a1F61
         LDA #$00
@@ -2623,20 +2909,32 @@ b93E4   LDA a3E
         BNE b93E4
 b93F4   JMP j9699
 
-j93F7   JSR s8FB0
+;-------------------------------
+; j93F7
+;-------------------------------
+j93F7   
+        JSR s8FB0
         JSR s95B9
         JSR s9444
         JSR s96FC
         JMP j93F7
 
-s9406   LDA #$20
+;-------------------------------
+; s9406
+;-------------------------------
+s9406   
+        LDA #$20
         LDX #$28
-b940A   STA f058F,X
+b940A   STA SCREEN_RAM + $018F,X
         DEX 
         BNE b940A
         JMP j57D1
 
-s9413   LDX #$00
+;-------------------------------
+; s9413
+;-------------------------------
+s9413   
+        LDX #$00
 b9415   LDA f1FB0,X
         AND #$80
         BEQ b9429
@@ -2650,7 +2948,11 @@ b9429   INX
         BNE b9415
         RTS 
 
-s942F   LDY #$00
+;-------------------------------
+; s942F
+;-------------------------------
+s942F   
+        LDY #$00
 b9431   LDA f1E40,Y
         STA a07
         LDA f1E50,Y
@@ -2661,7 +2963,11 @@ b9431   LDA f1E40,Y
         BNE b9431
 b9443   RTS 
 
-s9444   DEC a34
+;-------------------------------
+; s9444
+;-------------------------------
+s9444   
+        DEC a34
         BNE b9443
         LDA #$80
         STA a34
@@ -2683,7 +2989,7 @@ b9468   LDA a46
         BEQ b946F
         JMP j9D59
 
-b946F   LDA $DC00    ;CIA1: Data Port Register A
+b946F   LDA JOYSTICK1    ;CIA1: Data Port Register A
         AND #$08
         BNE b948B
         INC f1E40
@@ -2695,7 +3001,7 @@ b946F   LDA $DC00    ;CIA1: Data Port Register A
         DEC f1E40
         JMP b9492
 
-b948B   LDA $DC00    ;CIA1: Data Port Register A
+b948B   LDA JOYSTICK1    ;CIA1: Data Port Register A
         AND #$04
         BEQ b949C
 b9492   LDA #$00
@@ -2711,17 +3017,21 @@ b949C   LDA f1E40
         STA a29
         LDA #$C0
         STA f1F70
-j94AF   LDA $DC00    ;CIA1: Data Port Register A
+;-------------------------------
+; j94AF
+;-------------------------------
+j94AF   
+        LDA JOYSTICK1    ;CIA1: Data Port Register A
         AND #$10
         BEQ b94D6
-        LDA $DC00    ;CIA1: Data Port Register A
+        LDA JOYSTICK1    ;CIA1: Data Port Register A
         AND #$01
         BEQ b94C0
         JMP j94D7
 
 b94C0   LDA #$0F
         STA a39
-        LDA $DC00    ;CIA1: Data Port Register A
+        LDA JOYSTICK1    ;CIA1: Data Port Register A
         AND #$08
         STA a3A
         LDA #$01
@@ -2731,7 +3041,11 @@ b94C0   LDA #$0F
         STA a29
 b94D6   RTS 
 
-j94D7   LDA $DC00    ;CIA1: Data Port Register A
+;-------------------------------
+; j94D7
+;-------------------------------
+j94D7   
+        LDA JOYSTICK1    ;CIA1: Data Port Register A
         AND #$02
         BNE b94D6
         LDA f1E40
@@ -2746,7 +3060,11 @@ j94D7   LDA $DC00    ;CIA1: Data Port Register A
         STA f1FB0
         RTS 
 
-j94F6   CMP #$01
+;-------------------------------
+; j94F6
+;-------------------------------
+j94F6   
+        CMP #$01
         BNE b9551
         LDA a3A
         BNE b950B
@@ -2767,7 +3085,11 @@ b951A   LDA a39
         EOR #$FF
         CLC 
         ADC f1E50
-j9522   STA f1E50
+;-------------------------------
+; j9522
+;-------------------------------
+j9522   
+        STA f1E50
         LDA a39
         CMP #$F0
         BEQ b952E
@@ -2823,7 +3145,7 @@ b9585   CMP #$03
         LDA f1E40
         CMP #$11
         BEQ b9597
-        LDA $DC00    ;CIA1: Data Port Register A
+        LDA JOYSTICK1    ;CIA1: Data Port Register A
         AND #$02
         BEQ b9584
 b9597   LDA #$04
@@ -2844,7 +3166,11 @@ b959C   CMP #$04
         STA f1FB0
 b95B8   RTS 
 
-s95B9   DEC a3C
+;-------------------------------
+; s95B9
+;-------------------------------
+s95B9   
+        DEC a3C
         BNE b95B8
         LDA #$0C
         STA a3C
@@ -2853,10 +3179,10 @@ s95B9   DEC a3C
         BEQ b95CB
         JMP j962E
 
-b95CB   LDA $DC00    ;CIA1: Data Port Register A
+b95CB   LDA JOYSTICK1    ;CIA1: Data Port Register A
         AND #$10
         BNE b95B8
-        LDA $DC00    ;CIA1: Data Port Register A
+        LDA JOYSTICK1    ;CIA1: Data Port Register A
         AND #$0F
         CMP #$0F
         BEQ b95B8
@@ -2898,7 +3224,11 @@ b95EE   LDY #$01
         STA $D404    ;Voice 1: Control Register
         LDA #$01
         STA a3D
-j962E   LDA a3B
+;-------------------------------
+; j962E
+;-------------------------------
+j962E   
+        LDA a3B
         AND #$01
         BNE b963A
         DEC a1E51
@@ -2937,7 +3267,11 @@ b9677   LDA #$00
         LDY #$01
         JMP s9328
 
-s9680   LDA a3D
+;-------------------------------
+; s9680
+;-------------------------------
+s9680   
+        LDA a3D
         CMP #$01
         BNE b9698
         DEC a17
@@ -2953,7 +3287,11 @@ b9690   LDA #$00
 
 b9698   RTS 
 
-j9699   LDY #$00
+;-------------------------------
+; j9699
+;-------------------------------
+j9699   
+        LDY #$00
 b969B   LDA (p3E),Y
         STA f1DA0,Y
         INY 
@@ -2965,7 +3303,11 @@ b969B   LDA (p3E),Y
         STA a47
         JMP j9CB5
 
-j96B0   LDY #$00
+;-------------------------------
+; j96B0
+;-------------------------------
+j96B0   
+        LDY #$00
 b96B2   LDA f1DA0,Y
         STA f1D00,Y
         INY 
@@ -2976,13 +3318,17 @@ b96BD   LDA #$00
         INY 
         CPY #$A0
         BNE b96BD
-        LDA #<p0701
+        LDA #<SCREEN_RAM + $0301
         STA a4E
-        LDA #>p0701
+        LDA #>SCREEN_RAM + $0301
         STA a4F
         JMP j93F7
 
-s96D2   LDA aC5
+;-------------------------------
+; s96D2
+;-------------------------------
+s96D2   
+        LDA aC5
         CMP #$40
         BNE b96D9
 b96D8   RTS 
@@ -3006,17 +3352,21 @@ b96EA   INC a5F
 f96F7   .BYTE $1A    ;NOP 
 f96F8   ROL a0A
         ASL f0D,X
-s96FC   DEC a43
+;-------------------------------
+; s96FC
+;-------------------------------
+s96FC   
+        DEC a43
         BEQ b9701
         RTS 
 
 b9701   LDA a50
         CLC 
         ASL 
-        STA a02
+        STA screenPtrXPos
         LDA #$0C
         SEC 
-        SBC a02
+        SBC screenPtrXPos
         STA a43
         JSR s5817
         JSR s9B6D
@@ -3037,7 +3387,11 @@ b972A   INC a0A
         BNE b9718
         JMP j98A9
 
-s9735   LDX #$02
+;-------------------------------
+; s9735
+;-------------------------------
+s9735   
+        LDX #$02
 b9737   LDA f1F80,X
         BEQ b9743
         INX 
@@ -3046,7 +3400,11 @@ b9737   LDA f1F80,X
         LDX #$FF
 b9743   RTS 
 
-s9744   LDA f1DA0,Y
+;-------------------------------
+; s9744
+;-------------------------------
+s9744   
+        LDA f1DA0,Y
         STA f1D00,Y
         JSR s9735
         CPX #$FF
@@ -3066,7 +3424,11 @@ b975D   LDA f1DF8,Y
         BEQ b9743
         INC a4D
 b976F   JSR s97CB
-j9772   JSR s9DBB
+;-------------------------------
+; j9772
+;-------------------------------
+j9772   
+        JSR s9DBB
         LDA f1DA8,Y
         STA f1FB0,X
         LDA f1DB0,Y
@@ -3099,7 +3461,11 @@ j9772   JSR s9DBB
         TAY 
         JMP s92F6
 
-s97CB   LDA f1E10,Y
+;-------------------------------
+; s97CB
+;-------------------------------
+s97CB   
+        LDA f1E10,Y
         BNE b97DD
         LDA f1E00,Y
         STA f1E40,X
@@ -3111,29 +3477,33 @@ b97DD   CMP #$10
         BEQ b97E4
         JMP j985E
 
-b97E4   STX a02
-        STY a03
+b97E4   STX screenPtrXPos
+        STY screenPtrYPPos
         LDA f1E00,Y
         BEQ b97EF
         BNE b97F6
 b97EF   JSR s8D1D
         AND #$7F
         ADC #$10
-b97F6   LDX a02
+b97F6   LDX screenPtrXPos
         STA f1E40,X
-        LDY a03
+        LDY screenPtrYPPos
         LDA f1E08,Y
         BEQ b9804
         BNE b980B
 b9804   JSR s8D1D
         AND #$7F
         ADC #$30
-b980B   LDX a02
-        LDY a03
+b980B   LDX screenPtrXPos
+        LDY screenPtrYPPos
         STA f1E50,X
         RTS 
 
-s9813   LDA f1DF8,Y
+;-------------------------------
+; s9813
+;-------------------------------
+s9813   
+        LDA f1DF8,Y
         BNE b9819
         RTS 
 
@@ -3165,23 +3535,31 @@ b9845   LDA f1DF0,Y
         STA f1D80,X
 b9855   RTS 
 
-s9856   STX a02
+;-------------------------------
+; s9856
+;-------------------------------
+s9856   
+        STX screenPtrXPos
         JSR s8D1D
-        LDX a02
+        LDX screenPtrXPos
         RTS 
 
-j985E   AND #$0F
+;-------------------------------
+; j985E
+;-------------------------------
+j985E   
+        AND #$0F
         STA a06
         DEC a06
-        STX a04
-        STY a05
+        STX charToDraw
+        STY colorToDraw
 b9868   INX 
         CPX #$10
         BNE b986F
         LDX #$02
 b986F   LDA f1F80,X
         BNE b987B
-b9874   CPX a04
+b9874   CPX charToDraw
         BNE b9868
         PLA 
         PLA 
@@ -3190,13 +3568,13 @@ b9874   CPX a04
 b987B   LDA f1D10,X
         CMP a06
         BNE b9874
-        LDY a04
+        LDY charToDraw
         LDA f1E40,X
         STA f1E40,Y
         LDA f1E50,X
         STA f1E50,Y
-        LDX a04
-        LDY a05
+        LDX charToDraw
+        LDY colorToDraw
         LDA f1E40,X
         CLC 
         ADC f1E00,Y
@@ -3207,7 +3585,11 @@ b987B   LDA f1D10,X
         STA f1E50,X
         RTS 
 
-j98A9   LDX #$02
+;-------------------------------
+; j98A9
+;-------------------------------
+j98A9   
+        LDX #$02
 b98AB   LDA f1FB0,X
         BEQ b98B7
         TXA 
@@ -3220,7 +3602,11 @@ b98B7   INX
         BNE b98AB
 b98BC   RTS 
 
-s98BD   LDA f1D30,X
+;-------------------------------
+; s98BD
+;-------------------------------
+s98BD   
+        LDA f1D30,X
         CMP f1D40,X
         BEQ b98BC
         LDA f1D50,X
@@ -3256,7 +3642,11 @@ b98FC   DEC f1F70,X
         STA f1D50,X
 b990F   RTS 
 
-s9910   JSR s9A9C
+;-------------------------------
+; s9910
+;-------------------------------
+s9910   
+        JSR s9A9C
         DEC f1D20,X
         BNE b990F
         LDA f1D10,X
@@ -3266,7 +3656,7 @@ s9910   JSR s9A9C
         STA f1D20,X
         JSR s98BD
         JSR s993A
-        STX a02
+        STX screenPtrXPos
         JSR s9A39
         JSR s9A5F
         RTS 
@@ -3276,27 +3666,31 @@ f9933   AND f4F99,Y
         STA f99C0,Y
         RTS 
 
-s993A   LDA f1FB0,X
+;-------------------------------
+; s993A
+;-------------------------------
+s993A   
+        LDA f1FB0,X
         AND #$7F
         CLC 
         ASL 
         TAY 
         LDA f9933,Y
-        STA a02
+        STA screenPtrXPos
         LDA f9934,Y
-        STA a03
+        STA screenPtrYPPos
         JMP (p0002)
 
         LDA f1D60,X
         BEQ b9987
         AND #$80
-        STA a02
+        STA screenPtrXPos
         LDA f1D60,X
         AND #$7F
         TAY 
         DEY 
         TYA 
-        ORA a02
+        ORA screenPtrXPos
         STA f1D60,X
         CPY #$00
         BNE b9987
@@ -3312,17 +3706,21 @@ s993A   LDA f1FB0,X
 b997D   LDA f1E40,X
         SEC 
         SBC f1D80,X
-j9984   STA f1E40,X
+;-------------------------------
+; j9984
+;-------------------------------
+j9984   
+        STA f1E40,X
 b9987   LDA f1D70,X
         BEQ b99BF
         AND #$80
-        STA a02
+        STA screenPtrXPos
         LDA f1D70,X
         AND #$7F
         TAY 
         DEY 
         TYA 
-        ORA a02
+        ORA screenPtrXPos
         STA f1D70,X
         CPY #$00
         BNE b99BF
@@ -3338,24 +3736,32 @@ b9987   LDA f1D70,X
 b99B5   SEC 
         LDA f1E50,X
         SBC f1D80,X
-j99BC   STA f1E50,X
+;-------------------------------
+; j99BC
+;-------------------------------
+j99BC   
+        STA f1E50,X
 b99BF   RTS 
 
 f99C0   LDA f1D60,X
         AND #$0F
-        STA a02
+        STA screenPtrXPos
         LDA f1D60,X
         AND #$80
         BNE b99D7
         LDA f1E40,X
         CLC 
-        ADC a02
+        ADC screenPtrXPos
         JMP j99DD
 
 b99D7   LDA f1E40,X
         SEC 
-        SBC a02
-j99DD   STA f1E40,X
+        SBC screenPtrXPos
+;-------------------------------
+; j99DD
+;-------------------------------
+j99DD   
+        STA f1E40,X
         DEC f1D70,X
         LDA f1D70,X
         AND #$80
@@ -3368,7 +3774,7 @@ j99DD   STA f1E40,X
 
 b99F7   LDA f1D70,X
         EOR #$FF
-        STA a02
+        STA screenPtrXPos
         BEQ j9A38
         TAY 
 b9A01   INC f1E50,X
@@ -3399,9 +3805,17 @@ b9A29   JSR s9856
         STA f1D70,X
         RTS 
 
-j9A38   RTS 
+;-------------------------------
+; j9A38
+;-------------------------------
+j9A38   
+        RTS 
 
-s9A39   LDA f1E90,X
+;-------------------------------
+; s9A39
+;-------------------------------
+s9A39   
+        LDA f1E90,X
         BEQ j9A38
         DEC f1E90,X
         BNE j9A38
@@ -3419,7 +3833,11 @@ b9A5A   TXA
         TAY 
         JMP s9328
 
-s9A5F   LDX a02
+;-------------------------------
+; s9A5F
+;-------------------------------
+s9A5F   
+        LDX screenPtrXPos
         LDA f1E40,X
         AND #$80
         BNE b9A72
@@ -3437,7 +3855,11 @@ b9A7B   JSR s9C51
         TAY 
         JMP s9328
 
-j9A83   LDA f1E50,X
+;-------------------------------
+; j9A83
+;-------------------------------
+j9A83   
+        LDA f1E50,X
         AND #$80
         BNE b9A92
         LDA f1E50,X
@@ -3451,37 +3873,45 @@ b9A92   LDA f1E50,X
         BPL b9A7B
         RTS 
 
-s9A9C   STX a02
+;-------------------------------
+; s9A9C
+;-------------------------------
+s9A9C   
+        STX screenPtrXPos
         TXA 
         AND #$07
-        STA a03
+        STA screenPtrYPPos
         LDX #$00
         LDA #$01
-j9AA7   CLC 
-        CPX a03
+;-------------------------------
+; j9AA7
+;-------------------------------
+j9AA7   
+        CLC 
+        CPX screenPtrYPPos
         BEQ b9AB1
         ASL 
         INX 
         JMP j9AA7
 
-b9AB1   STA a04
+b9AB1   STA charToDraw
         LDA a44
         AND #$02
         BNE b9ABC
 b9AB9   JMP j9B14
 
 b9ABC   LDA a44
-        AND a04
+        AND charToDraw
         BEQ b9AB9
-        LDX a02
+        LDX screenPtrXPos
         LDA f1E40,X
         SEC 
         SBC a1E41
         SBC #$04
-        STA a03
+        STA screenPtrYPPos
         AND #$80
         BEQ b9AB9
-        LDA a03
+        LDA screenPtrYPPos
         EOR #$FF
         CMP #$18
         BPL b9AB9
@@ -3489,10 +3919,10 @@ b9ABC   LDA a44
         SEC 
         SBC a1E51
         SBC #$04
-        STA a03
+        STA screenPtrYPPos
         AND #$80
         BEQ b9AB9
-        LDA a03
+        LDA screenPtrYPPos
         EOR #$FF
         CMP #$18
         BPL b9AB9
@@ -3512,8 +3942,12 @@ b9ABC   LDA a44
         STA a3B
         PLA 
         TAX 
-j9B14   LDA a44
-        AND a04
+;-------------------------------
+; j9B14
+;-------------------------------
+j9B14   
+        LDA a44
+        AND charToDraw
         BNE b9B1B
 b9B1A   RTS 
 
@@ -3524,20 +3958,20 @@ b9B1B   LDA a44
         SEC 
         SBC f1E40
         ADC #$0C
-        STA a03
+        STA screenPtrYPPos
         AND #$80
         BNE b9B1A
-        LDA a03
+        LDA screenPtrYPPos
         CMP #$20
         BPL b9B1A
         LDA f1E50,X
         SEC 
         SBC f1E50
         ADC #$0C
-        STA a03
+        STA screenPtrYPPos
         AND #$80
         BNE b9B1A
-        LDA a03
+        LDA screenPtrYPPos
         CMP #$20
         BPL b9B1A
         LDY f1D10,X
@@ -3557,7 +3991,11 @@ b9B1B   LDA a44
         TAX 
 b9B6C   RTS 
 
-s9B6D   LDA a40
+;-------------------------------
+; s9B6D
+;-------------------------------
+s9B6D   
+        LDA a40
         CMP f1F60
         BEQ b9B77
         DEC f1F60
@@ -3576,7 +4014,11 @@ b9B77   LDA a41
         STA $D40B    ;Voice 2: Control Register
 b9B93   RTS 
 
-s9B94   LDA f1E28,Y
+;-------------------------------
+; s9B94
+;-------------------------------
+s9B94   
+        LDA f1E28,Y
         BEQ b9B93
         CMP #$FF
         BEQ b9B93
@@ -3609,12 +4051,12 @@ s9B94   LDA f1E28,Y
         TAY 
 b9BCB   TXA 
         PHA 
-b9BCD   INC f040D,X
-        LDA f040D,X
+b9BCD   INC SCREEN_RAM + $000D,X
+        LDA SCREEN_RAM + $000D,X
         CMP #$3A
         BNE b9BDF
         LDA #$30
-        STA f040D,X
+        STA SCREEN_RAM + $000D,X
         DEX 
         BNE b9BCD
 b9BDF   PLA 
@@ -3627,33 +4069,41 @@ b9BDF   PLA
         TAY 
         RTS 
 
-s9BE9   LDY f1D10,X
+;-------------------------------
+; s9BE9
+;-------------------------------
+s9BE9   
+        LDY f1D10,X
         LDA f1E30,Y
-        STA a05
-        STX a04
+        STA colorToDraw
+        STX charToDraw
         LDA #$00
         STA $D412    ;Voice 3: Control Register
 b9BF8   JSR s9C0C
-        DEC a05
+        DEC colorToDraw
         BNE b9BF8
         LDA #$08
         STA $D40F    ;Voice 3: Frequency Control - High-Byte
         LDA #$81
         STA $D412    ;Voice 3: Control Register
-        LDX a04
+        LDX charToDraw
         RTS 
 
-s9C0C   LDX a4A
+;-------------------------------
+; s9C0C
+;-------------------------------
+s9C0C   
+        LDX a4A
         LDA a55
         BNE b9C1C
-        INC f043C,X
-        LDA f043C,X
+        INC SCREEN_RAM + $003C,X
+        LDA SCREEN_RAM + $003C,X
         CMP #$50
         BEQ b9C1D
 b9C1C   RTS 
 
 b9C1D   LDA #$20
-        STA f043C,X
+        STA SCREEN_RAM + $003C,X
         DEC a4A
         BNE b9C36
         LDA a46
@@ -3680,7 +4130,11 @@ b9C36   DEC a4B
 f9C4A   BRK #$0C
         ASL a0A0C
         ORA #$08
-s9C51   LDY f1D10,X
+;-------------------------------
+; s9C51
+;-------------------------------
+s9C51   
+        LDY f1D10,X
         LDA f1DF8,Y
         AND #$80
         BEQ b9C1C
@@ -3690,7 +4144,11 @@ s9C51   LDY f1D10,X
         STA a4D
         RTS 
 
-j9C64   LDA f1DF8,Y
+;-------------------------------
+; j9C64
+;-------------------------------
+j9C64   
+        LDA f1DF8,Y
         AND #$40
         BNE b9C6C
         RTS 
@@ -3730,7 +4188,11 @@ b9CAD   CMP #$04
 
 b9CB4   RTS 
 
-j9CB5   JSR s9CFB
+;-------------------------------
+; j9CB5
+;-------------------------------
+j9CB5   
+        JSR s9CFB
         STA a53
         JSR s9CFB
         STA a52
@@ -3739,7 +4201,7 @@ j9CB5   JSR s9CFB
         JSR s9CFB
         STA a42
         JSR s9CFB
-        STA a02
+        STA screenPtrXPos
         JSR s9CFB
         STA $D025    ;Sprite Multi-Color Register 0
         JSR s9CFB
@@ -3751,18 +4213,26 @@ j9CB5   JSR s9CFB
         LDX #$00
         STX $D01C    ;Sprites Multi-Color Mode Select
 b9CEA   JSR s9CFB
-        STA f058F,X
+        STA SCREEN_RAM + $018F,X
         INX 
         CPX #$28
         BNE b9CEA
         JSR s5007
         JMP j96B0
 
-s9CFB   LDA (p3E),Y
+;-------------------------------
+; s9CFB
+;-------------------------------
+s9CFB   
+        LDA (p3E),Y
         INY 
 b9CFE   RTS 
 
-s9CFF   DEC a4E
+;-------------------------------
+; s9CFF
+;-------------------------------
+s9CFF   
+        DEC a4E
         BNE b9CFE
         LDA #$60
         STA a4E
@@ -3774,7 +4244,7 @@ s9CFF   DEC a4E
         BEQ b9D29
         LDA f9D21,X
         LDX #$00
-b9D18   STA fD98F,X
+b9D18   STA COLOR_RAM + $018F,X
         INX 
         CPX #$28
         BNE b9D18
@@ -3783,31 +4253,39 @@ b9D18   STA fD98F,X
 f9D21   .BYTE $00,$06,$02,$04,$05,$03,$07,$01
 b9D29   JMP s9406
 
-s9D2C   DEC a47
+;-------------------------------
+; s9D2C
+;-------------------------------
+s9D2C   
+        DEC a47
         BEQ b9D31
 b9D30   RTS 
 
 b9D31   LDA #$10
         STA a47
-        DEC a0422
-        LDA a0422
+        DEC SCREEN_RAM + $0022
+        LDA SCREEN_RAM + $0022
         CMP #$2F
         BNE b9D30
-        LDA a0421
+        LDA SCREEN_RAM + $0021
         CMP #$30
         BEQ b9D4F
         LDA #$39
-        STA a0422
-        DEC a0421
+        STA SCREEN_RAM + $0022
+        DEC SCREEN_RAM + $0021
         RTS 
 
 b9D4F   LDA #$30
-        STA a0422
+        STA SCREEN_RAM + $0022
         LDA #$FF
         STA a46
         RTS 
 
-j9D59   LDY #$01
+;-------------------------------
+; j9D59
+;-------------------------------
+j9D59   
+        LDY #$01
         JSR s9328
         LDA #$00
         STA a33
@@ -3820,22 +4298,22 @@ b9D70   DEY
         BNE b9D70
         LDX #$00
         LDA #$00
-        STA a02
+        STA screenPtrXPos
 b9D79   LDA f1F80,X
         CMP #$88
         BNE b9D90
-        STA a02
+        STA screenPtrXPos
         INC f1E40,X
         BNE b9D90
         TXA 
         TAY 
-        STX a03
+        STX screenPtrYPPos
         JSR s9328
-        LDX a03
+        LDX screenPtrYPPos
 b9D90   INX 
         CPX a42
         BNE b9D79
-        LDA a02
+        LDA screenPtrXPos
         BNE b9D6E
         JSR s9E0A
         INC a58
@@ -3854,8 +4332,12 @@ b9DB5   LDX #$F8
         TXS 
         JMP j937B
 
-s9DBB   STX a03
-        STY a04
+;-------------------------------
+; s9DBB
+;-------------------------------
+s9DBB   
+        STX screenPtrYPPos
+        STY charToDraw
         TXA 
         AND #$07
         TAX 
@@ -3866,7 +4348,7 @@ b9DC9   CLC
         ASL 
         DEX 
         BNE b9DC9
-b9DCE   STA a05
+b9DCE   STA colorToDraw
         LDA #$01
         CPY #$00
         BEQ b9DDB
@@ -3878,32 +4360,40 @@ b9DDB   STA a06
         AND a53
         BEQ b9DE9
         LDA $D01C    ;Sprites Multi-Color Mode Select
-        ORA a05
+        ORA colorToDraw
         STA $D01C    ;Sprites Multi-Color Mode Select
 b9DE9   LDA a06
         AND a51
         BEQ b9DF7
         LDA $D01D    ;Sprites Expand 2x Horizontal (X)
-        ORA a05
+        ORA colorToDraw
         STA $D01D    ;Sprites Expand 2x Horizontal (X)
 b9DF7   LDA a06
         AND a52
         BEQ b9E05
         LDA $D017    ;Sprites Expand 2x Vertical (Y)
-        ORA a05
+        ORA colorToDraw
         STA $D017    ;Sprites Expand 2x Vertical (Y)
-b9E05   LDX a03
-        LDY a04
+b9E05   LDX screenPtrYPPos
+        LDY charToDraw
         RTS 
 
-s9E0A   LDA #$0F
+;-------------------------------
+; s9E0A
+;-------------------------------
+s9E0A   
+        LDA #$0F
         STA a46
-        STA a03
-j9E10   LDA #$00
+        STA screenPtrYPPos
+;-------------------------------
+; j9E10
+;-------------------------------
+j9E10   
+        LDA #$00
         STA $D404    ;Voice 1: Control Register
         STA a29
         JSR s9C0C
-        INC a03
+        INC screenPtrYPPos
         LDA a46
         CMP #$FF
         BEQ b9E48
@@ -3914,26 +4404,26 @@ j9E10   LDA #$00
         STA $D404    ;Voice 1: Control Register
         LDA #$00
         STA $D401    ;Voice 1: Frequency Control - High-Byte
-        STA a02
+        STA screenPtrXPos
 b9E35   LDY #$30
 b9E37   DEY 
         BNE b9E37
-        DEC a02
-        LDA a02
+        DEC screenPtrXPos
+        LDA screenPtrXPos
         STA $D401    ;Voice 1: Frequency Control - High-Byte
         CMP #$C0
         BNE b9E35
         JMP j9E10
 
-b9E48   LDA a03
+b9E48   LDA screenPtrYPPos
         AND #$80
         BEQ b9E52
         LDA #$7F
-        STA a03
-b9E52   LDA a03
+        STA screenPtrYPPos
+b9E52   LDA screenPtrYPPos
         CLC 
         ASL 
-        STA a03
+        STA screenPtrYPPos
         LDA #$01
         STA a4A
         LDA #>p0101
@@ -3942,8 +4432,12 @@ b9E52   LDA a03
         STA a4B
         LDA #$4F
         LDY a4A
-        STA f043C,Y
-j9E6B   LDA #$00
+        STA SCREEN_RAM + $003C,Y
+;-------------------------------
+; j9E6B
+;-------------------------------
+j9E6B   
+        LDA #$00
         STA $D404    ;Voice 1: Control Register
         JSR s9EB6
         LDA a46
@@ -3953,8 +4447,8 @@ j9E6B   LDA #$00
 b9E7C   LDY #$0A
 b9E7E   DEY 
         BNE b9E7E
-        INC a02
-        LDA a02
+        INC screenPtrXPos
+        LDA screenPtrXPos
         STA $D401    ;Voice 1: Frequency Control - High-Byte
         CMP #$40
         BNE b9E7C
@@ -3966,30 +4460,34 @@ b9E8F   LDX #$05
         LDA #$21
         STA $D404    ;Voice 1: Control Register
 b9E9B   LDA #$C0
-        STA a02
+        STA screenPtrXPos
 b9E9F   LDY #$00
 b9EA1   DEY 
         BNE b9EA1
-        LDA a02
+        LDA screenPtrXPos
         STA $D401    ;Voice 1: Frequency Control - High-Byte
         LDA #$21
         STA $D404    ;Voice 1: Control Register
-        DEC a02
+        DEC screenPtrXPos
         BNE b9E9F
         DEX 
         BNE b9E9B
         RTS 
 
-s9EB6   LDX a4A
-        DEC f043C,X
-        LDA f043C,X
+;-------------------------------
+; s9EB6
+;-------------------------------
+s9EB6   
+        LDX a4A
+        DEC SCREEN_RAM + $003C,X
+        LDA SCREEN_RAM + $003C,X
         CMP #$47
         BEQ b9EC7
-        DEC a03
+        DEC screenPtrYPPos
         BEQ b9EEC
         RTS 
 
-b9EC7   INC f043C,X
+b9EC7   INC SCREEN_RAM + $003C,X
         INC a4B
         LDA a4B
         CMP #$04
@@ -4010,17 +4508,30 @@ b9EEC   LDA #$00
         STA a46
         JMP j9EF7
 
-b9EF3   DEC a03
+b9EF3   DEC screenPtrYPPos
         BEQ b9EEC
-j9EF7   LDA #$4F
-        STA f043C,X
+
+;-------------------------------
+; j9EF7
+;-------------------------------
+j9EF7   
+        LDA #$4F
+        STA SCREEN_RAM + $003C,X
         RTS 
 
-s9EFD   PHA 
+;-------------------------------
+; s9EFD
+;-------------------------------
+s9EFD   
+        PHA 
         PHA 
         JMP b9BCB
 
-s9F02   LDA #$00
+;-------------------------------
+; s9F02
+;-------------------------------
+s9F02   
+        LDA #$00
         STA f1D70,X
         STA f1D60,X
         STA f1E70,X
@@ -4039,7 +4550,11 @@ b9F21   LDA a3B
         LDA #$01
         STA f1D70,X
         STA f1E80,X
-j9F2F   LDA a3B
+;-------------------------------
+; j9F2F
+;-------------------------------
+j9F2F   
+        LDA a3B
         AND #$04
         BEQ b9F3D
         LDA #$81
@@ -4053,7 +4568,11 @@ b9F3D   LDA a3B
         STA f1D60,X
 b9F4B   RTS 
 
-j9F4C   LDY #$01
+;-------------------------------
+; j9F4C
+;-------------------------------
+j9F4C   
+        LDY #$01
         LDA #$00
         STA f1FB0
 b9F53   JSR s9328
@@ -4065,7 +4584,11 @@ b9F53   JSR s9328
         STA a29
         LDA #$CD
         STA f1F70
-j9F67   DEC f1E50
+;-------------------------------
+; j9F67
+;-------------------------------
+j9F67   
+        DEC f1E50
         LDA f1E50
         CMP #$80
         BEQ b9F79
@@ -4075,7 +4598,11 @@ j9F67   DEC f1E50
 
 b9F79   LDA #$9C
         STA f1F70
-j9F7E   INC f1E50
+;-------------------------------
+; j9F7E
+;-------------------------------
+j9F7E   
+        INC f1E50
         LDA f1E50
         CMP #$C8
         BEQ b9F90
@@ -4098,7 +4625,7 @@ b9F9D   LDA #$00
         STA a4A
 b9FAC   LDX a4A
         LDA #$48
-        STA f043C,X
+        STA SCREEN_RAM + $003C,X
         INC a4A
         LDA a4A
         CMP #$13
@@ -4122,7 +4649,7 @@ b9FAC   LDX a4A
         STA a56
         JSR j5359
         JSR s5544
-b9FE6   JMP j8A3C
+b9FE6   JMP ContinueInitializing
 
 b9FE9   JSR s5143
         JMP j93AB
