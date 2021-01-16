@@ -138,6 +138,16 @@ p030F = $030F
 p0312 = $0312
 p0800 = $0800
 pC820 = $C820
+
+BLACK    = $00
+WHITE    = $01
+RED      = $02
+CYAN     = $03
+PURPLE   = $04
+BLUE     = $06
+YELLOW   = $07
+LTYELLOW = $0F
+
 ;
 ; **** EXTERNAL JUMPS **** 
 ;
@@ -671,7 +681,7 @@ j51EB
         STA screenPtrYPPos
         LDA #<p030F
         STA screenPtrXPos
-        LDA #$03
+        LDA #CYAN
         STA colorToDraw
 b51F9   LDA f52C2,X
         STA charToDraw
@@ -685,7 +695,7 @@ b51F9   LDA f52C2,X
         LDA #<SCREEN_RAM + $0209
         STA screenPtrXPos
         LDX #$00
-        LDA #$01
+        LDA #WHITE
         STA colorToDraw
 b5216   LDA f52C9,X
         STA charToDraw
@@ -806,7 +816,7 @@ s5300
         STA screenPtrYPPos
         LDA #<p0A08
         STA screenPtrXPos
-        LDA #$04
+        LDA #PURPLE
         STA colorToDraw
 
         LDX #$00
@@ -1073,7 +1083,7 @@ b55A2   LDA SCREEN_RAM + $000D,Y
         STA screenPtrYPPos
         LDA #<p0307
         STA screenPtrXPos
-        LDA #$03
+        LDA #CYAN
         STA colorToDraw
         LDX #$00
 b55C2   LDA f55ED,X
@@ -1730,6 +1740,7 @@ b8AC6   LDA #$28
         LDA #$0E
         STA $D023    ;Background Color 2, Multi-Color Register 1
 
+        ; Points the character set to $2000
         LDA #$18
         STA $D018    ;VIC Memory Control Register
 
@@ -2361,7 +2372,7 @@ s8FB0
         BEQ b8FB5
         RTS 
 
-b8FB5   LDA #$01
+b8FB5   LDA #WHITE
         STA colorToDraw
         LDA #$10
         STA a28
@@ -2463,7 +2474,7 @@ b9032   LDA #$54
         LDX #$00
         LDA #$1E
         STA $D01C    ;Sprites Multi-Color Mode Select
-        LDA #$01
+        LDA #WHITE
         STA colorToDraw
         LDA #>p0A0A
 p9078   STA screenPtrYPPos
