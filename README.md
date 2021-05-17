@@ -1,5 +1,5 @@
 # Revenge of the Mutant Camels (1984) by Jeff Minter
-<img src="https://upload.wikimedia.org/wikipedia/en/5/50/Revenge_of_the_Mutant_Camels_Coverart.png" height=300><img src="https://user-images.githubusercontent.com/58846/108626235-0e848d00-7447-11eb-869a-ca974b865506.gif" height=300>
+<img src="https://upload.wikimedia.org/wikipedia/en/5/50/Revenge_of_the_Mutant_Camels_Coverart.png" height=300><img src="https://user-images.githubusercontent.com/58846/118549908-055c4100-b754-11eb-91c0-03c89b40a87b.gif" height=300>
 
 This is the disassembled and [commented source code] for the 1984 Commodore 64 game Revenge of the Mutant Camels by Jeff Minter. 
 
