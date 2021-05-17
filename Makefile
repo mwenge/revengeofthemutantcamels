@@ -11,7 +11,7 @@ original: clean d64_orig run_orig
 
 revengecamels.prg: src/revengecamels.asm
 	64tass -Wall -Wno-implied-reg --cbm-prg -o bin/revengecamels.prg -L bin/list-co1.txt -l bin/labels.txt src/revengecamels.asm
-	md5sum bin/revengecamels.prg orig/revengecamels.prg
+	md5sum bin/revengecamels.prg bin/revengecamels-bench.prg
 
 d64: revengecamels.prg
 	$(C1541) -format "revengecamels,rq" d64 $(D64_IMAGE)

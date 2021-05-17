@@ -10,6 +10,7 @@ screenPtrXPos = $02
 screenPtrYPPos = $03
 charToDraw = $04
 colorToDraw = $05
+a02 = $02
 a06 = $06
 a07 = $07
 a08 = $08
@@ -94,6 +95,8 @@ a61 = $61
 a62 = $62
 a63 = $63
 aC5 = $C5
+aFB = $FB
+aFC = $FC
 ;
 ; **** ZP POINTERS **** 
 ;
@@ -1698,7 +1701,7 @@ InitializeGame
         STA a56
         STA a58
         STA a1F98
-        STA a1F99
+        JSR sC019
         LDA #$00
         STA a59
         STA a5C
@@ -1892,10 +1895,10 @@ PerformAnimationAndScrolling
 
 b8BE1   CMP #$02
         BNE b8BFD
-        LDA #$10
+        LDA #$F8
         STA $D012    ;Raster Position
         LDA $D011    ;VIC Control Register 1
-        ORA #$80
+        AND #$7F
         STA $D011    ;VIC Control Register 1
         LDA $D016    ;VIC Control Register 2
         AND #$F8
@@ -3018,7 +3021,7 @@ b948B   LDA JOYSTICK1    ;CIA1: Data Port Register A
 b9492   LDA #$00
         STA f1FB0
         STA a29
-        JMP j94AF
+        JMP jC000
 
 b949C   LDA f1E40
         CMP #$11
@@ -3439,7 +3442,7 @@ b976F   JSR s97CB
 ; j9772
 ;-------------------------------
 j9772   
-        JSR s9DBB
+        JSR sC061
         LDA f1DA8,Y
         STA f1FB0,X
         LDA f1DB0,Y
@@ -3906,12 +3909,12 @@ j9AA7
         JMP j9AA7
 
 b9AB1   STA charToDraw
-        LDA a44
+        LDA #$FF
         AND #$02
         BNE b9ABC
 b9AB9   JMP j9B14
 
-b9ABC   LDA a44
+b9ABC   LDA #$FF
         AND charToDraw
         BEQ b9AB9
         LDX screenPtrXPos
@@ -4107,7 +4110,7 @@ s9C0C
         LDX a4A
         LDA a55
         BNE b9C1C
-        INC SCREEN_RAM + $003C,X
+a9C12   INC SCREEN_RAM + $003C,X
         LDA SCREEN_RAM + $003C,X
         CMP #$50
         BEQ b9C1D
@@ -4115,6 +4118,7 @@ b9C1C   RTS
 
 b9C1D   LDA #$20
         STA SCREEN_RAM + $003C,X
+a9C22
         DEC a4A
         BNE b9C36
         LDA a46
@@ -4326,7 +4330,7 @@ b9D90   INX
         BNE b9D79
         LDA screenPtrXPos
         BNE b9D6E
-        JSR s9E0A
+        JSR sC023
         INC a58
         LDA a58
         CMP #$2A
@@ -4443,6 +4447,7 @@ b9E52   LDA screenPtrYPPos
         STA a4B
         LDA #$4F
         LDY a4A
+a9E68
         STA SCREEN_RAM + $003C,Y
 ;-------------------------------
 ; j9E6B
@@ -4490,7 +4495,7 @@ b9EA1   DEY
 ;-------------------------------
 s9EB6   
         LDX a4A
-        DEC SCREEN_RAM + $003C,X
+a9EB8   DEC SCREEN_RAM + $003C,X
         LDA SCREEN_RAM + $003C,X
         CMP #$47
         BEQ b9EC7
@@ -4514,6 +4519,7 @@ b9EE2   INC a4A
         LDX a4A
         CPX #$13
         BNE b9EF3
+a9EEA
         DEC a4A
 b9EEC   LDA #$00
         STA a46
@@ -4636,12 +4642,13 @@ b9F9D   LDA #$00
         STA a4A
 b9FAC   LDX a4A
         LDA #$48
+a9FB0
         STA SCREEN_RAM + $003C,X
         INC a4A
         LDA a4A
         CMP #$13
         BNE b9FAC
-        DEC a4A
+a9FBB   DEC a4A
         LDA #$06
         STA a4C
         LDA #$08
@@ -4660,7 +4667,7 @@ b9FAC   LDX a4A
         STA a56
         JSR j5359
         JSR s5544
-b9FE6   JMP ContinueInitializing
+b9FE6   JMP jC082
 
 b9FE9   JSR s5143
         JMP j93AB
@@ -4670,3 +4677,144 @@ b9FE9   JSR s5143
         .TEXT "CBOO:"
 fA000   .TEXT " "
         ORA (p40,X)
+
+*=$C000
+;--------------------------------------------------------------------
+; jC000   
+; This section was added by Jeff Minter in May 2021 to fix collision
+; detection. His notes on the YAKYAK discord were:
+; "So this morning I loaded a c64 emulator onto the Quest 2 played some Llamasoft
+; games on there, it works well thew on Revenge of the Mutant Camels, and in
+; playing it, the thing that has always bugged me about that game stood out: the
+; shitty collision detection.  As often as not your shots go straight through the
+; enemies. It's annoying and makes what should be a straightforward task of
+; learning the enemy patterns and shooting or avoiding them into far more of a
+; lottery than it should be.  I played it in an emulator, and yep, just as
+; obvious there.  I started messing around with the debugger in the emulator.  I
+; started looking through the code.  And... I fixed it. I have a version of
+; Revenge of the Mutant Camels with non shitty collision detection, and it is way
+; nicer to play :smile:
+; 
+; Bypassed the hardware collision detection, which I probably wasn't doing right.
+; It means bullet to enemy collisions are now a bit more in favour of the player,
+; but you don't get the complete nonsense of bullets passing through enemies a
+; significant percentage of the time.  The whole game just feels much more solid
+; now."
+; https://discord.com/channels/473490125142360064/473490125142360068
+;--------------------------------------------------------------------
+jC000   
+	LDA $DC01    ;CIA1: Data Port Register B
+        CMP #$50
+        BEQ bC012
+        CMP #$50
+        BEQ bC00E
+        JMP j94AF
+
+bC00E   LDA #$29
+        STA a58
+bC012   LDA #$00
+        STA a02
+        JMP j9D59
+
+sC019   LDA #$00
+        STA a1F99
+        LDA #$00
+        STA a58
+        RTS
+
+;--------------------------------------------------------------------
+; sC023   
+;--------------------------------------------------------------------
+sC023   
+	LDA #$C6
+        STA a9C22
+        STA a9EEA
+        STA a9FBB
+        LDA #$99
+        STA a9E68
+        LDA #$9D
+        STA a9FB0
+        LDA #$DE
+        STA a9EB8
+        LDA #$FE
+        STA a9C12
+        JSR s9E0A
+        RTS
+
+;--------------------------------------------------------------------
+; sC046   
+;--------------------------------------------------------------------
+sC046   
+	LDA #$A5
+        STA a9C22
+        STA a9EEA
+        STA a9FBB
+        LDA #$B9
+        STA a9E68
+        LDA #$BD
+        STA a9C12
+        STA a9EB8
+        STA a9FB0
+;--------------------------------------------------------------------
+; sC061   
+;--------------------------------------------------------------------
+sC061   
+	JSR s9DBB
+        RTS
+
+        LDA #$00
+        LDX #$08
+        TAY
+        JSR $FFBA ; - set file parameters
+        LDA #$10
+        LDX #$02
+        LDY #$C1
+        JSR $FFBD ; - set file name
+        LDA #$00
+        LDX #$00
+        LDY #$5E
+        JSR $FFD5 ; - load after call SETLFS,SETNAM
+        JMP PerformAnimationAndScrolling
+
+;--------------------------------------------------------------------
+; jC082   
+;--------------------------------------------------------------------
+jC082   
+	SEI
+        JSR $FDA3 ; (jmp) - initialize CIA & IRQ
+        JSR $FD15 ; (jmp) - restore default I/O vectors
+        JSR sC0B9
+        LDA #$00
+        STA $D020    ;Border Color
+        STA $D021    ;Background Color 0
+        LDA #$00
+        LDX #$08
+        TAY
+        JSR $FFBA ; - set file parameters
+        LDA #$12
+        LDX #$00
+        LDY #$C1
+        JSR $FFBD ; - set file name
+        LDA #<f5E00
+        STA aFB
+        LDA #>f5E00
+        STA aFC
+        LDX #$D0
+        LDY #$5E
+        LDA #$FB
+        JSR $FFD8 ; - save after call SETLFS,SETNAM
+        JMP PerformAnimationAndScrolling
+
+;--------------------------------------------------------------------
+; sC0B9   
+;--------------------------------------------------------------------
+sC0B9   
+	JSR $F48A
+        JSR $FF5B ; (jmp) - init VIC & screen editor
+        LDA #<kernelInterrupt
+        STA a034    ;IRQ
+        LDA #>kernelInterrupt
+        STA a035    ;IRQ
+        CLI
+        RTS
+
