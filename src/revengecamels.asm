@@ -4703,7 +4703,7 @@ fA000   .TEXT " "
 ; https://discord.com/channels/473490125142360064/473490125142360068
 ;--------------------------------------------------------------------
 jC000   
-	LDA $DC01    ;CIA1: Data Port Register B
+        LDA $DC01    ;CIA1: Data Port Register B
         CMP #$50
         BEQ bC012
         CMP #$50
@@ -4726,7 +4726,7 @@ sC019   LDA #$00
 ; sC023   
 ;--------------------------------------------------------------------
 sC023   
-	LDA #$C6
+        LDA #$C6
         STA a9C22
         STA a9EEA
         STA a9FBB
@@ -4745,7 +4745,7 @@ sC023
 ; sC046   
 ;--------------------------------------------------------------------
 sC046   
-	LDA #$A5
+        LDA #$A5
         STA a9C22
         STA a9EEA
         STA a9FBB
@@ -4759,7 +4759,7 @@ sC046
 ; sC061   
 ;--------------------------------------------------------------------
 sC061   
-	JSR s9DBB
+        JSR s9DBB
         RTS
 
         LDA #$00
@@ -4780,7 +4780,7 @@ sC061
 ; jC082   
 ;--------------------------------------------------------------------
 jC082   
-	SEI
+        SEI
         JSR $FDA3 ; (jmp) - initialize CIA & IRQ
         JSR $FD15 ; (jmp) - restore default I/O vectors
         JSR sC0B9
@@ -4809,7 +4809,7 @@ jC082
 ; sC0B9   
 ;--------------------------------------------------------------------
 sC0B9   
-	JSR $F48A
+        JSR $F48A
         JSR $FF5B ; (jmp) - init VIC & screen editor
         LDA #<kernelInterrupt
         STA a034    ;IRQ
